@@ -1,6 +1,8 @@
+use crate::player::Player;
+use crate::ship::Ship;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use uuid::Uuid;
-use crate::Player;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct GameState {

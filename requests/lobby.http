@@ -1,5 +1,11 @@
 ### GET request to example server
-GET https://examples.http-client.intellij.net/get
-    ?generated-in=RustRover
+POST {{host}}/lobby
+Content-Type: application/json
+
+{
+  "name": "Player 1",
+  "team": "The A Team",
+  "password": "password"
+}
 
 ###

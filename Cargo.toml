@@ -12,7 +12,7 @@ serde = { version = "1.0.215", features = ["derive"] }
 serde_json = "1.0.133"
 tracing = { version = "0.1.40" }
 tracing-opentelemetry = { version = "0.28.0" }
-uuid = { version = "1.11.0", features = ["v4", "v8"] }
+uuid = { version = "1.11.0", features = ["v4", "serde"] }
 tokio = { version = "1.41.1", features = ["full", "tracing"] }
 tower = "0.5.1"
 hyper = "1.5.1"
