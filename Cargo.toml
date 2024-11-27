@@ -1,0 +1,22 @@
+[package]
+name = "spaceracers"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+axum = { version = "0.7.9", features = ["macros", "matched-path", "tracing", "ws"] }
+
+opentelemetry = "0.27.0"
+serde = { version = "1.0.215", features = ["derive"] }
+serde_json = "1.0.133"
+tracing = { version = "0.1.40" }
+tracing-opentelemetry = { version = "0.28.0" }
+uuid = { version = "1.11.0", features = ["v4", "v8"] }
+tokio = { version = "1.41.1", features = ["full", "tracing"] }
+tower = "0.5.1"
+hyper = "1.5.1"
+http-body-util = "0.1.2"
+http = "1.1.0"
+mime = "0.3.17"
+tracing-subscriber = { version = "0.3.18", features=["fmt", "env-filter", "json", "tracing-log"] }
