@@ -1,7 +1,8 @@
+use bevy::prelude::Component;
 use serde::{Deserialize, Serialize};
 
 // Player structure
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
 pub struct Player {
     pub name: String,
     pub team: String,
