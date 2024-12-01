@@ -9,6 +9,10 @@ mod telemetry;
 mod components;
 
 mod tests;
+mod game_logic;
+
+#[cfg(ui)]
+mod graphics_plugin;
 
 use app_state::AppState;
 use axum::extract::State;
@@ -19,22 +23,18 @@ use std::net::SocketAddr;
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 use tracing::info;
+use crate::components::{Name, Person};
 use uuid::Uuid;
-use crate::components::{Person, Name};
+
+#[cfg(ui)]
+use graphics_plugin::GraphicsPlugin;
 
 const BOUNDS: Vec2 = Vec2::new(900.0, 640.0);
 
-fn setup_graphics(mut commands: Commands) {
-    commands.spawn(Camera2dBundle {
-        transform: Default::default(),
-        ..default()
-    });
-}
+
 
 
 pub fn setup_physics(mut commands: Commands) {
-
-
     commands.spawn((
         TransformBundle::from(Transform::from_xyz(0.0, 100.0, 0.0)),
         Collider::cuboid(80.0, 30.0),
@@ -51,7 +51,7 @@ pub fn setup_physics(mut commands: Commands) {
 }
 
 
-pub fn display_events(
+pub fn display_events_system(
     mut collision_events: EventReader<CollisionEvent>,
     mut contact_force_events: EventReader<ContactForceEvent>,
 ) {
@@ -64,25 +64,6 @@ pub fn display_events(
     }
 }
 
-pub struct GraphicsPlugin;
-
-impl Plugin for GraphicsPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup_graphics);
-        app.add_plugins((
-            DefaultPlugins.set(WindowPlugin {
-                primary_window: Some(Window {
-                    //resolution: bevy::window::WindowResolution::new(1000., 1000.),
-                    title: "Graphics Rendering Plugin".to_string(),
-                    ..default()
-                }),
-                ..default()
-            }),
-            RapierDebugRenderPlugin::default()
-        ));
-    }
-}
-
 pub struct DriftPhysicsPlugin;
 
 impl Plugin for DriftPhysicsPlugin {
@@ -91,18 +72,13 @@ impl Plugin for DriftPhysicsPlugin {
             RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(50.0),
         ));
 
-        app.insert_resource(ClearColor(Color::srgb(
-            0xF9 as f32 / 255.0,
-            0xF9 as f32 / 255.0,
-            0xFF as f32 / 255.0,
-        )));
         app.add_systems(Startup, setup_physics);
-        app.add_systems(Update, ship_movement);
-        app.add_systems(PostUpdate, display_events);
+        app.add_systems(Update, apply_keyboard_controls_system);
+        app.add_systems(PostUpdate, display_events_system);
     }
 }
 
-pub fn ship_movement(
+pub fn apply_keyboard_controls_system(
     keyboard_input: Res<ButtonInput<KeyCode>>,
     mut player_info: Query<(&crate::components::DemoPlayer, &mut Transform, &mut ExternalImpulse)>,
 ) {
@@ -135,6 +111,17 @@ pub fn ship_movement(
         transform.translation = transform.translation.min(extents).max(-extents);
     }
 }
+
+
+// TODO... something like this
+// async fn apply_network_controls_system(
+//     app_state: Res<AppState>,
+//     mut query: Query<&mut RigidBody>,
+// ) {
+//     let lobby = app_state.lobby_players.lock().unwrap();
+//     // Iterate over ships and apply controls
+// }
+
 
 pub fn setup_scene(mut commands: Commands) {
     /*
@@ -177,12 +164,41 @@ pub fn setup_scene(mut commands: Commands) {
 fn main() {
     telemetry::init();
 
-    // Bevy application
+    let app_state = AppState::new();
+    let web_app_state = app_state.clone();
+
+    let _axum_thread = std::thread::spawn(move || {
+
+        // Axum application runs within a Tokio runtime in this thread
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_io()
+            .build()
+            .expect("Couldn't create tokio runtime");
+        rt.block_on(async move {
+            let router = app::create_app(web_app_state);
+
+            // Run our app with hyper on localhost:5000
+            let addr = SocketAddr::from(([0, 0, 0, 0], 5000));
+            let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+
+            info!("Webserver starting. Listening on {}", addr);
+            axum::serve(listener, router)
+                .await
+                .unwrap();
+        });
+    });
+
+    info!("Starting Bevy application");
+    // Bevy application - at least during development needs to run in the main thread
+    // because it opens a window and runs an EventLoop.
     App::new()
+        .insert_resource(app_state)
         .add_plugins(DriftPhysicsPlugin)
-        .add_plugins(GraphicsPlugin)
         .add_systems(Startup, setup_scene)
+        //#[cfg(ui)]
+        //.add_plugins(DefaultPlugins).add_plugin(GraphicsPlugin);
         .run();
+
 
     info!("Shutting down...");
 
