@@ -1,17 +1,15 @@
-use std::collections::HashMap;
 use crate::app_state::AppState;
+use crate::game_state::GameState;
 use crate::player::Player;
 use axum::extract::State;
 use axum::Json;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::time::Duration;
 use uuid::Uuid;
-use crate::game_state::GameState;
-
 
 const MIN_PLAYERS: usize = 2; // Minimum players to start a game
 const LOBBY_WAIT_TIME: Duration = Duration::from_secs(30);
-
 
 // Lobby response structure
 // TODO improve to deal with responding to players queued waiting for game to start
@@ -23,7 +21,6 @@ pub struct LobbyResponse {
     pub game: String,
     pub map: String,
 }
-
 
 #[axum::debug_handler]
 pub async fn lobby_handler(

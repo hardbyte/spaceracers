@@ -12,5 +12,3 @@ pub struct GameState {
     pub map_name: String,
     pub state: String, // e.g., "lobby", "running", "finished"
 }
-
-

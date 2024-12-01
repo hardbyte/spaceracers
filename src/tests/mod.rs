@@ -1,9 +1,9 @@
 #[cfg(test)]
 mod tests {
-    use crate::api::root_handler;
+    use crate::network::api::root_handler;
     use crate::app_state::AppState;
     use crate::player::Player;
-    use crate::routes::{lobby_handler, LobbyResponse};
+    use crate::network::routes::{lobby_handler, LobbyResponse};
     use axum::routing::{get, post};
     use axum::{
         body::Body,
@@ -86,25 +86,31 @@ mod tests {
             game_id: None,
         };
 
-        let response1 = app.clone()
-            .oneshot(Request::builder()
-                .method("POST")
-                .uri("/lobby")
-                .header(http::header::CONTENT_TYPE, mime::APPLICATION_JSON.as_ref())
-                .body(Body::from(serde_json::to_string(&player1).unwrap()))
-                .unwrap())
+        let response1 = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/lobby")
+                    .header(http::header::CONTENT_TYPE, mime::APPLICATION_JSON.as_ref())
+                    .body(Body::from(serde_json::to_string(&player1).unwrap()))
+                    .unwrap(),
+            )
             .await
             .unwrap();
 
         assert_eq!(response1.status(), StatusCode::OK);
 
-        let response2 = app.clone()
-            .oneshot(Request::builder()
-                .method("POST")
-                .uri("/lobby")
-                .header(http::header::CONTENT_TYPE, mime::APPLICATION_JSON.as_ref())
-                .body(Body::from(serde_json::to_string(&player2).unwrap()))
-                .unwrap())
+        let response2 = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/lobby")
+                    .header(http::header::CONTENT_TYPE, mime::APPLICATION_JSON.as_ref())
+                    .body(Body::from(serde_json::to_string(&player2).unwrap()))
+                    .unwrap(),
+            )
             .await
             .unwrap();
 
@@ -115,16 +121,19 @@ mod tests {
     async fn test_state_endpoint() {
         let app_state = AppState::new();
         let app = axum::Router::new()
-            .route("/state", get(crate::routes::state_handler))
+            .route("/state", get(crate::network::routes::state_handler))
             .with_state(app_state.clone());
 
         let response = app
-            .oneshot(Request::builder().uri("/state").body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .uri("/state")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
 
         assert_eq!(response.status(), StatusCode::OK);
     }
-
-
 }

@@ -1,8 +1,8 @@
 use crate::game_state::GameState;
 use crate::player::Player;
+use bevy::prelude::Resource;
 use std::collections::HashMap;
 use std::sync::Arc;
-use bevy::prelude::Resource;
 use tokio::sync::Mutex;
 use uuid::Uuid;
 

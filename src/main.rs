@@ -1,42 +1,38 @@
-
 mod app_state;
 mod game_state;
 mod player;
 
-mod network;
-mod ship;
-mod telemetry;
 mod components;
 mod game_logic;
 mod map;
+mod network;
 mod physics;
+mod ship;
+mod telemetry;
 mod tests;
 
-#[cfg(feature="ui")]
+#[cfg(feature = "ui")]
 mod graphics_plugin;
 
-
+use crate::components::{Name, Person};
 use app_state::AppState;
 use axum::extract::State;
 use axum::Json;
+use bevy::prelude::*;
+use bevy_rapier2d::prelude::*;
 use opentelemetry::global;
 use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
-use bevy::prelude::*;
-use bevy_rapier2d::prelude::*;
 use tracing::info;
-use crate::components::{Name, Person};
 use uuid::Uuid;
 
-#[cfg(feature="ui")]
+#[cfg(feature = "ui")]
 use graphics_plugin::GraphicsPlugin;
 
 // TODO make these based on the map size
 const BOUNDS: Vec2 = Vec2::new(900.0, 640.0);
 
-
 pub fn setup_physics(mut commands: Commands) {
-
     commands.spawn((
         TransformBundle::from(Transform::from_xyz(0.0, 100.0, 0.0)),
         Collider::cuboid(80.0, 30.0),
@@ -51,7 +47,6 @@ pub fn setup_physics(mut commands: Commands) {
         ContactForceEventThreshold(10.0),
     ));
 }
-
 
 pub fn display_events_system(
     mut collision_events: EventReader<CollisionEvent>,
@@ -70,13 +65,11 @@ pub struct DriftPhysicsPlugin;
 
 impl Plugin for DriftPhysicsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((
-            RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(50.0),
-        ));
+        app.add_plugins((RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(50.0),));
 
         app.add_systems(Startup, setup_physics);
 
-        #[cfg(feature="ui")]
+        #[cfg(feature = "ui")]
         {
             app.add_systems(Update, apply_keyboard_controls_system);
         }
@@ -85,10 +78,13 @@ impl Plugin for DriftPhysicsPlugin {
     }
 }
 
-
 pub fn apply_keyboard_controls_system(
     keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut player_info: Query<(&crate::components::ControllableShip, &mut Transform, &mut ExternalImpulse)>,
+    mut player_info: Query<(
+        &crate::components::ControllableShip,
+        &mut Transform,
+        &mut ExternalImpulse,
+    )>,
 ) {
     for (player, mut transform, mut rb_imps) in &mut player_info {
         let up = keyboard_input.any_pressed([KeyCode::KeyW, KeyCode::ArrowUp]);
@@ -106,20 +102,17 @@ pub fn apply_keyboard_controls_system(
         // Apply an impulse to the rigid body along the ship axis
         rb_imps.impulse = impulse_ahead as f32 * heading_2d * player.impulse;
 
-
         // Apply a torque impulse to the rigid body
         let left = keyboard_input.any_pressed([KeyCode::KeyA, KeyCode::ArrowLeft]);
         let right = keyboard_input.any_pressed([KeyCode::KeyD, KeyCode::ArrowRight]);
         let rotation = (left as i8) - (right as i8);
         rb_imps.torque_impulse = rotation as f32 * player.torque_impulse;
 
-
         // bound the ship within the invisible level bounds
         let extents = Vec3::from((BOUNDS / 2.0, 0.0));
         transform.translation = transform.translation.min(extents).max(-extents);
     }
 }
-
 
 // TODO network control system something like this
 // async fn apply_network_controls_system(
@@ -130,14 +123,12 @@ pub fn apply_keyboard_controls_system(
 //     // Iterate over ships and apply controls
 // }
 
-
 pub fn setup_scene(mut commands: Commands) {
     let maps = crate::map::load_maps();
     let map = &maps[0]; // Select the first map for now
 
     // Set up gravity using the map specific value
     //-map.gravity
-
 
     // Ground
     let ground_size = 500.0;
@@ -190,7 +181,6 @@ pub fn setup_scene(mut commands: Commands) {
     ));
 }
 
-
 fn main() {
     telemetry::init();
 
@@ -198,7 +188,6 @@ fn main() {
     let web_app_state = app_state.clone();
 
     let _axum_thread = std::thread::spawn(move || {
-
         // Axum application runs within a Tokio runtime in this thread
         let rt = tokio::runtime::Builder::new_current_thread()
             .enable_io()
@@ -212,9 +201,7 @@ fn main() {
             let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
 
             info!("Webserver starting. Listening on {}", addr);
-            axum::serve(listener, router)
-                .await
-                .unwrap();
+            axum::serve(listener, router).await.unwrap();
         });
     });
 
@@ -223,35 +210,28 @@ fn main() {
     // because it opens a window and runs an EventLoop.
     let mut app = App::new();
 
-    app
-        .insert_resource(app_state)
+    app.insert_resource(app_state)
         .add_plugins(DriftPhysicsPlugin)
         .add_systems(Startup, setup_scene);
 
-    #[cfg(feature="ui")]
+    #[cfg(feature = "ui")]
     {
-        app
-            .add_plugins(
-                DefaultPlugins.set(
-                    WindowPlugin {
-                        primary_window: Some(Window {
-                            //resolution: bevy::window::WindowResolution::new(1000., 1000.),
-                            title: "SpaceRaceRS Graphics Rendering Plugin".to_string(),
-                            ..default()
-                        }),
-                        ..default()
-                    }), )
-            .add_plugins(GraphicsPlugin);
+        app.add_plugins(DefaultPlugins.set(WindowPlugin {
+            primary_window: Some(Window {
+                //resolution: bevy::window::WindowResolution::new(1000., 1000.),
+                title: "SpaceRaceRS Graphics Rendering Plugin".to_string(),
+                ..default()
+            }),
+            ..default()
+        }))
+        .add_plugins(GraphicsPlugin);
     }
-    #[cfg(not(feature="ui"))]
+    #[cfg(not(feature = "ui"))]
     {
-        app
-            .add_plugins(MinimalPlugins);
+        app.add_plugins(MinimalPlugins);
     }
 
-    app
-        .run();
-
+    app.run();
 
     info!("Shutting down...");
 
