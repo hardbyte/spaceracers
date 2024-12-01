@@ -1,18 +1,20 @@
-mod app;
+
 mod app_state;
 mod game_state;
 mod player;
-mod routes;
+
+mod network;
 mod ship;
 mod telemetry;
-
 mod components;
-
-mod tests;
 mod game_logic;
+mod map;
+mod physics;
+mod tests;
 
-#[cfg(ui)]
+#[cfg(feature="ui")]
 mod graphics_plugin;
+
 
 use app_state::AppState;
 use axum::extract::State;
@@ -26,15 +28,15 @@ use tracing::info;
 use crate::components::{Name, Person};
 use uuid::Uuid;
 
-#[cfg(ui)]
+#[cfg(feature="ui")]
 use graphics_plugin::GraphicsPlugin;
 
+// TODO make these based on the map size
 const BOUNDS: Vec2 = Vec2::new(900.0, 640.0);
 
 
-
-
 pub fn setup_physics(mut commands: Commands) {
+
     commands.spawn((
         TransformBundle::from(Transform::from_xyz(0.0, 100.0, 0.0)),
         Collider::cuboid(80.0, 30.0),
@@ -73,14 +75,20 @@ impl Plugin for DriftPhysicsPlugin {
         ));
 
         app.add_systems(Startup, setup_physics);
-        app.add_systems(Update, apply_keyboard_controls_system);
+
+        #[cfg(feature="ui")]
+        {
+            app.add_systems(Update, apply_keyboard_controls_system);
+        }
+
         app.add_systems(PostUpdate, display_events_system);
     }
 }
 
+
 pub fn apply_keyboard_controls_system(
     keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut player_info: Query<(&crate::components::DemoPlayer, &mut Transform, &mut ExternalImpulse)>,
+    mut player_info: Query<(&crate::components::ControllableShip, &mut Transform, &mut ExternalImpulse)>,
 ) {
     for (player, mut transform, mut rb_imps) in &mut player_info {
         let up = keyboard_input.any_pressed([KeyCode::KeyW, KeyCode::ArrowUp]);
@@ -113,7 +121,7 @@ pub fn apply_keyboard_controls_system(
 }
 
 
-// TODO... something like this
+// TODO network control system something like this
 // async fn apply_network_controls_system(
 //     app_state: Res<AppState>,
 //     mut query: Query<&mut RigidBody>,
@@ -124,23 +132,40 @@ pub fn apply_keyboard_controls_system(
 
 
 pub fn setup_scene(mut commands: Commands) {
-    /*
-     * Ground
-     */
+    let maps = crate::map::load_maps();
+    let map = &maps[0]; // Select the first map for now
+
+    // Set up gravity using the map specific value
+    //-map.gravity
+
+
+    // Ground
     let ground_size = 500.0;
     let ground_height = 10.0;
     commands.spawn((
-        TransformBundle::from(Transform::from_xyz(0.0, 0.0 * -ground_height, 0.0)),
+        TransformBundle::from(Transform::from_xyz(0.0, -ground_height, 0.0)),
         Collider::cuboid(ground_size, ground_height),
     ));
 
-    let sprite_size = 10.0;
+    // Obstacles
+    for obstacle in &map.obstacles {
+        commands.spawn((
+            TransformBundle::from(Transform::from_xyz(
+                obstacle.position.x,
+                obstacle.position.y,
+                0.0,
+            )),
+            Collider::cuboid(obstacle.size.x / 2.0, obstacle.size.y / 2.0),
+        ));
+    }
 
-    // Spawn entity with `DemoPlayer` struct as a component for access in movement query.
+    // Spawn Ship
+    let sprite_size = 25.0;
+
     commands.spawn((
-        crate::components::DemoPlayer {
-            impulse: 5_000.0,
-            torque_impulse: 250.0,
+        crate::components::ControllableShip {
+            impulse: 10_000.0,
+            torque_impulse: 800.0,
         },
         SpriteBundle {
             sprite: Sprite {
@@ -152,8 +177,13 @@ pub fn setup_scene(mut commands: Commands) {
             ..Default::default()
         },
         RigidBody::Dynamic,
+        //ExternalForce::default(),
+        Damping {
+            linear_damping: 0.2,
+            angular_damping: 0.95,
+        },
         ExternalImpulse::default(),
-        AdditionalMassProperties::Mass(100.0),
+        AdditionalMassProperties::Mass(200.0),
         Restitution::coefficient(0.9),
         Friction::coefficient(0.5),
         Collider::ball(sprite_size / 2.0),
@@ -175,7 +205,7 @@ fn main() {
             .build()
             .expect("Couldn't create tokio runtime");
         rt.block_on(async move {
-            let router = app::create_app(web_app_state);
+            let router = network::api::create_app(web_app_state);
 
             // Run our app with hyper on localhost:5000
             let addr = SocketAddr::from(([0, 0, 0, 0], 5000));
@@ -191,12 +221,35 @@ fn main() {
     info!("Starting Bevy application");
     // Bevy application - at least during development needs to run in the main thread
     // because it opens a window and runs an EventLoop.
-    App::new()
+    let mut app = App::new();
+
+    app
         .insert_resource(app_state)
         .add_plugins(DriftPhysicsPlugin)
-        .add_systems(Startup, setup_scene)
-        //#[cfg(ui)]
-        //.add_plugins(DefaultPlugins).add_plugin(GraphicsPlugin);
+        .add_systems(Startup, setup_scene);
+
+    #[cfg(feature="ui")]
+    {
+        app
+            .add_plugins(
+                DefaultPlugins.set(
+                    WindowPlugin {
+                        primary_window: Some(Window {
+                            //resolution: bevy::window::WindowResolution::new(1000., 1000.),
+                            title: "SpaceRaceRS Graphics Rendering Plugin".to_string(),
+                            ..default()
+                        }),
+                        ..default()
+                    }), )
+            .add_plugins(GraphicsPlugin);
+    }
+    #[cfg(not(feature="ui"))]
+    {
+        app
+            .add_plugins(MinimalPlugins);
+    }
+
+    app
         .run();
 
 

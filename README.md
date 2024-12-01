@@ -18,3 +18,5 @@ src/
 └── root_tests.rs
 ```
 
+
+cargo run --features ui

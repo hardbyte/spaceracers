@@ -24,16 +24,9 @@ impl Plugin for GraphicsPlugin {
             0xF9 as f32 / 255.0,
             0xFF as f32 / 255.0,
         )));
+
         app.add_systems(Startup, setup_graphics);
         app.add_plugins((
-            DefaultPlugins.set(WindowPlugin {
-                primary_window: Some(Window {
-                    //resolution: bevy::window::WindowResolution::new(1000., 1000.),
-                    title: "Graphics Rendering Plugin".to_string(),
-                    ..default()
-                }),
-                ..default()
-            }),
             RapierDebugRenderPlugin::default()
         ));
     }

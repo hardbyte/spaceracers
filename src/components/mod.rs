@@ -15,7 +15,7 @@ pub struct Name(pub String);
 
 // The float value is the player acceleration in 'pixels/second/second'.
 #[derive(Component)]
-pub struct DemoPlayer {
+pub struct ControllableShip {
     pub impulse: f32,
     pub torque_impulse: f32,
 }

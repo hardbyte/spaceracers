@@ -1,8 +1,9 @@
 #[cfg(test)]
 mod tests {
+    use crate::api::root_handler;
     use crate::app_state::AppState;
     use crate::player::Player;
-    use crate::routes::{lobby_handler, root_handler, LobbyResponse};
+    use crate::routes::{lobby_handler, LobbyResponse};
     use axum::routing::{get, post};
     use axum::{
         body::Body,
@@ -60,6 +61,70 @@ mod tests {
 
         assert_eq!(lobby_response.name, "TestPlayer");
         assert_eq!(lobby_response.map, "default_map");
-        assert!(Uuid::parse_str(&lobby_response.game).is_ok());
+        // assert that the response game ID is null since we only have one player
+        assert_eq!(lobby_response.game, "waiting_for_players");
     }
+
+    #[tokio::test]
+    async fn test_lobby_with_multiple_players() {
+        let app_state = AppState::new();
+        let app = axum::Router::new()
+            .route("/lobby", post(lobby_handler))
+            .with_state(app_state.clone());
+
+        let player1 = Player {
+            name: "Player1".to_string(),
+            team: "TeamA".to_string(),
+            password: "secret1".to_string(),
+            game_id: None,
+        };
+
+        let player2 = Player {
+            name: "Player2".to_string(),
+            team: "TeamA".to_string(),
+            password: "secret2".to_string(),
+            game_id: None,
+        };
+
+        let response1 = app.clone()
+            .oneshot(Request::builder()
+                .method("POST")
+                .uri("/lobby")
+                .header(http::header::CONTENT_TYPE, mime::APPLICATION_JSON.as_ref())
+                .body(Body::from(serde_json::to_string(&player1).unwrap()))
+                .unwrap())
+            .await
+            .unwrap();
+
+        assert_eq!(response1.status(), StatusCode::OK);
+
+        let response2 = app.clone()
+            .oneshot(Request::builder()
+                .method("POST")
+                .uri("/lobby")
+                .header(http::header::CONTENT_TYPE, mime::APPLICATION_JSON.as_ref())
+                .body(Body::from(serde_json::to_string(&player2).unwrap()))
+                .unwrap())
+            .await
+            .unwrap();
+
+        assert_eq!(response2.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_state_endpoint() {
+        let app_state = AppState::new();
+        let app = axum::Router::new()
+            .route("/state", get(crate::routes::state_handler))
+            .with_state(app_state.clone());
+
+        let response = app
+            .oneshot(Request::builder().uri("/state").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+
 }
