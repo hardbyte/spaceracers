@@ -3,11 +3,8 @@ use serde::{Deserialize, Serialize};
 
 // Player structure
 #[derive(Component, Debug, Serialize, Deserialize, Clone)]
-pub struct Player {
+pub struct PlayerRegistration {
     pub name: String,
-    pub team: String,
+    pub team: Option<String>,
     pub password: String,
-
-    // Game ID assigned to the player
-    pub game_id: Option<String>,
 }

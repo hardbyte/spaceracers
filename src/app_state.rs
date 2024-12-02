@@ -1,24 +1,26 @@
-use crate::game_state::GameState;
-use crate::player::Player;
+use crate::game_state::{GameEvent, GameState};
+use crate::network::routes::PendingGame;
 use bevy::prelude::Resource;
 use std::collections::HashMap;
-use std::sync::Arc;
-use tokio::sync::Mutex;
+use std::sync::{Arc, Mutex};
+use tokio::sync::mpsc;
 use uuid::Uuid;
 
 // Application state will be shared between tokio and bevy so needs to be thread-safe
 #[derive(Clone, Debug, Resource)]
 pub struct AppState {
     // Stores players waiting in the lobby
-    pub lobby_players: Arc<Mutex<HashMap<String, Player>>>,
-    pub games: Arc<Mutex<HashMap<Uuid, GameState>>>,
+    pub lobby: Arc<Mutex<Vec<PendingGame>>>,
+    pub active_game: Arc<Mutex<Option<GameState>>>,
+    // A channel for sending events from Axum to Bevy
+    //pub game_events_tx: mpsc::UnboundedSender<GameEvent>,
 }
 
 impl AppState {
     pub fn new() -> Self {
         Self {
-            lobby_players: Arc::new(Mutex::new(HashMap::new())),
-            games: Arc::new(Mutex::new(HashMap::new())),
+            lobby: Arc::new(Mutex::new(Vec::new())),
+            active_game: Arc::new(Mutex::new(None)),
         }
     }
 }

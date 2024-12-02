@@ -1,9 +1,9 @@
 #[cfg(test)]
 mod tests {
-    use crate::network::api::root_handler;
     use crate::app_state::AppState;
-    use crate::player::Player;
+    use crate::network::api::root_handler;
     use crate::network::routes::{lobby_handler, LobbyResponse};
+    use crate::player::PlayerRegistration;
     use axum::routing::{get, post};
     use axum::{
         body::Body,
@@ -35,11 +35,10 @@ mod tests {
             .route("/lobby", post(lobby_handler))
             .with_state(app_state.clone());
 
-        let player = Player {
+        let player = PlayerRegistration {
             name: "TestPlayer".to_string(),
-            team: "TestTeam".to_string(),
+            team: Some("TestTeam".to_string()),
             password: "secret".to_string(),
-            game_id: None,
         };
 
         let response = app
@@ -61,8 +60,8 @@ mod tests {
 
         assert_eq!(lobby_response.name, "TestPlayer");
         assert_eq!(lobby_response.map, "default_map");
-        // assert that the response game ID is null since we only have one player
-        assert_eq!(lobby_response.game, "waiting_for_players");
+        // assert that the response game ID is a valid UUID
+        assert!(Uuid::parse_str(&lobby_response.game).is_ok());
     }
 
     #[tokio::test]
@@ -72,18 +71,16 @@ mod tests {
             .route("/lobby", post(lobby_handler))
             .with_state(app_state.clone());
 
-        let player1 = Player {
+        let player1 = PlayerRegistration {
             name: "Player1".to_string(),
-            team: "TeamA".to_string(),
+            team: Some("TeamA".to_string()),
             password: "secret1".to_string(),
-            game_id: None,
         };
 
-        let player2 = Player {
+        let player2 = PlayerRegistration {
             name: "Player2".to_string(),
-            team: "TeamA".to_string(),
+            team: Some("TeamA".to_string()),
             password: "secret2".to_string(),
-            game_id: None,
         };
 
         let response1 = app
