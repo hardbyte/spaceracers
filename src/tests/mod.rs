@@ -2,7 +2,7 @@
 mod tests {
     use crate::app_state::AppState;
     use crate::network::api::root_handler;
-    use crate::network::routes::{lobby_handler, LobbyResponse};
+    use crate::network::lobby_route::{lobby_handler, LobbyResponse};
     use crate::player::PlayerRegistration;
     use axum::routing::{get, post};
     use axum::{
@@ -58,10 +58,10 @@ mod tests {
         let body_bytes = response.into_body().collect().await.unwrap().to_bytes();
         let lobby_response: LobbyResponse = serde_json::from_slice(&body_bytes).unwrap();
 
-        assert_eq!(lobby_response.name, "TestPlayer");
+        assert_eq!(lobby_response.player_id, "TestPlayer");
         assert_eq!(lobby_response.map, "default_map");
         // assert that the response game ID is a valid UUID
-        assert!(Uuid::parse_str(&lobby_response.game).is_ok());
+        assert!(Uuid::parse_str(&lobby_response.game_id).is_ok());
     }
 
     #[tokio::test]
@@ -118,7 +118,7 @@ mod tests {
     async fn test_state_endpoint() {
         let app_state = AppState::new();
         let app = axum::Router::new()
-            .route("/state", get(crate::network::routes::state_handler))
+            .route("/state", get(crate::network::game_state_route::state_handler))
             .with_state(app_state.clone());
 
         let response = app

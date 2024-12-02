@@ -23,11 +23,14 @@ use bevy_rapier2d::prelude::*;
 use opentelemetry::global;
 use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
+use bevy::state::app::StatesPlugin;
+use bevy_tokio_tasks::{TokioTasksPlugin, TokioTasksRuntime};
 use tracing::info;
 use uuid::Uuid;
 
 #[cfg(feature = "ui")]
 use graphics_plugin::GraphicsPlugin;
+use crate::game_logic::{GameEvent, ServerState};
 
 // TODO make these based on the map size
 const BOUNDS: Vec2 = Vec2::new(900.0, 640.0);
@@ -150,69 +153,55 @@ pub fn setup_scene(mut commands: Commands) {
         ));
     }
 
-    // Spawn Ship
-    let sprite_size = 25.0;
-
-    commands.spawn((
-        crate::components::ControllableShip {
-            impulse: 10_000.0,
-            torque_impulse: 800.0,
-        },
-        SpriteBundle {
-            sprite: Sprite {
-                color: Color::srgb(0.0, 0.0, 0.0),
-                custom_size: Some(Vec2::new(sprite_size, sprite_size)),
-                ..Default::default()
-            },
-            transform: Transform::from_xyz(-200.0, 150.0, 0.0),
-            ..Default::default()
-        },
-        RigidBody::Dynamic,
-        //ExternalForce::default(),
-        Damping {
-            linear_damping: 0.2,
-            angular_damping: 0.95,
-        },
-        ExternalImpulse::default(),
-        AdditionalMassProperties::Mass(200.0),
-        Restitution::coefficient(0.9),
-        Friction::coefficient(0.5),
-        Collider::ball(sprite_size / 2.0),
-    ));
+    // // Spawn Ship
+    // let sprite_size = 25.0;
+    //
+    // commands.spawn((
+    //     crate::components::ControllableShip {
+    //         impulse: 10_000.0,
+    //         torque_impulse: 800.0,
+    //     },
+    //     SpriteBundle {
+    //         sprite: Sprite {
+    //             color: Color::srgb(0.0, 0.0, 0.0),
+    //             custom_size: Some(Vec2::new(sprite_size, sprite_size)),
+    //             ..Default::default()
+    //         },
+    //         transform: Transform::from_xyz(-200.0, 150.0, 0.0),
+    //         ..Default::default()
+    //     },
+    //     RigidBody::Dynamic,
+    //     //ExternalForce::default(),
+    //     Damping {
+    //         linear_damping: 0.2,
+    //         angular_damping: 0.95,
+    //     },
+    //     ExternalImpulse::default(),
+    //     AdditionalMassProperties::Mass(200.0),
+    //     Restitution::coefficient(0.9),
+    //     Friction::coefficient(0.5),
+    //     Collider::ball(sprite_size / 2.0),
+    // ));
 }
 
 fn main() {
     telemetry::init();
 
     let app_state = AppState::new();
-    let web_app_state = app_state.clone();
-
-    let _axum_thread = std::thread::spawn(move || {
-        // Axum application runs within a Tokio runtime in this thread
-        let rt = tokio::runtime::Builder::new_current_thread()
-            .enable_io()
-            .build()
-            .expect("Couldn't create tokio runtime");
-        rt.block_on(async move {
-            let router = network::api::create_app(web_app_state);
-
-            // Run our app with hyper on localhost:5000
-            let addr = SocketAddr::from(([0, 0, 0, 0], 5000));
-            let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-
-            info!("Webserver starting. Listening on {}", addr);
-            axum::serve(listener, router).await.unwrap();
-        });
-    });
-
     info!("Starting Bevy application");
+
     // Bevy application - at least during development needs to run in the main thread
     // because it opens a window and runs an EventLoop.
     let mut app = App::new();
 
-    app.insert_resource(app_state)
+    app
+        .insert_resource(app_state)
+        .add_plugins(TokioTasksPlugin::default())
         .add_plugins(DriftPhysicsPlugin)
-        .add_systems(Startup, setup_scene);
+        .add_systems(Startup, network::setup_http)
+        .add_systems(Startup, setup_scene)
+        .add_systems(Update, game_logic::game_scheduler_system)
+        .add_event::<GameEvent>();
 
     #[cfg(feature = "ui")]
     {
@@ -231,7 +220,12 @@ fn main() {
         app.add_plugins(MinimalPlugins);
     }
 
-    app.run();
+
+    // TODO look at Bevy support for States:
+    // https://github.com/bevyengine/bevy/blob/latest/examples/games/game_menu.rs
+    app
+        .init_state::<ServerState>()
+        .run();
 
     info!("Shutting down...");
 

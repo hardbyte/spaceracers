@@ -1,6 +1,6 @@
 use crate::app_state::AppState;
 use crate::game_state::{GameState, GameStatus};
-use crate::player::PlayerRegistration;
+use crate::player::{Player, PlayerRegistration};
 use crate::ship::Ship;
 use axum::extract::State;
 use axum::Json;
@@ -12,7 +12,7 @@ use std::time::Duration;
 use tracing::info;
 use uuid::Uuid;
 
-const MIN_PLAYERS: usize = 2; // Minimum players to start a game
+const MIN_PLAYERS: usize = 1; // Minimum players to start a game
 const MAX_PLAYERS: usize = 5; // Maximum players for a game
 const LOBBY_WAIT_TIME: Duration = Duration::from_secs(30);
 
@@ -22,15 +22,15 @@ const LOBBY_WAIT_TIME: Duration = Duration::from_secs(30);
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LobbyResponse {
-    pub name: String,
-    pub game: String,
+    pub player_id: String,
+    pub game_id: String,
     pub map: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PendingGame {
     pub game_id: Uuid,
-    pub players: Vec<PlayerRegistration>,
+    pub players: Vec<Player>,
     pub map_name: String,
 }
 
@@ -49,7 +49,8 @@ pub async fn lobby_handler(
     State(state): State<AppState>,
     Json(payload): Json<PlayerRegistration>,
 ) -> Json<LobbyResponse> {
-    tracing::info!(?payload, "Request to add player to lobby");
+    info!(?payload, "Request to add player to lobby");
+    let player = Player::from(payload.clone());
 
     let mut pending_games = state.lobby.lock().unwrap();
 
@@ -64,10 +65,10 @@ pub async fn lobby_handler(
         .next()
         .unwrap();
 
-    tracing::info!(game_id=?pending_game.game_id, "Player will be added to pending game");
+    tracing::info!(player_id=?player.id, game_id=?pending_game.game_id, "Player will be added to pending game");
 
     // Add the player to the pending game
-    pending_game.players.push(payload.clone());
+    pending_game.players.push(player);
 
     // Check if the pending game is now full
     if pending_game.players.len() >= MAX_PLAYERS {
@@ -93,24 +94,9 @@ pub async fn lobby_handler(
 
     // Respond with the lobby response
     Json(LobbyResponse {
-        name: payload.name,
-        game: pending_game.game_id.to_string(),
+        player_id: payload.name,
+        game_id: pending_game.game_id.to_string(),
         map: pending_game.map_name.clone(),
     })
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub enum StateResponse {
-    Inactive,
-    Active(GameState),
-}
-
-// TODO update to take a game-id query parameter
-#[axum::debug_handler]
-pub async fn state_handler(State(state): State<AppState>) -> Json<StateResponse> {
-    if let Some(game) = state.active_game.lock().unwrap().deref() {
-        Json(StateResponse::Active(game.clone()))
-    } else {
-        Json(StateResponse::Inactive)
-    }
-}

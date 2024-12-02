@@ -1,5 +1,5 @@
 use crate::app_state::AppState;
-use crate::network::routes;
+use crate::network::{game_state_route, lobby_route};
 
 use axum::routing::{get, post};
 use axum::Router;
@@ -13,7 +13,7 @@ pub fn create_app(app_state: AppState) -> Router {
 
     Router::new()
         .route("/", get(root_handler))
-        .route("/lobby", post(routes::lobby_handler))
-        .route("/state", get(routes::state_handler))
+        .route("/lobby", post(lobby_route::lobby_handler))
+        .route("/state", get(game_state_route::state_handler))
         .with_state(app_state)
 }

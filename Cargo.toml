@@ -25,3 +25,4 @@ mime = "0.3.17"
 tracing-subscriber = { version = "0.3.19", features=["fmt", "env-filter", "json", "tracing-log"] }
 bevy = "0.14.2"
 bevy_rapier2d = { version = "0.27.0", features = ["simd-stable", "parallel", "serde", "headless", "serde-serialize"] }
+bevy-tokio-tasks = "0.14.0"
