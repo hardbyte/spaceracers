@@ -16,10 +16,21 @@ pub fn load_maps() -> Vec<Map> {
         Map {
             name: "Gravity Map".to_string(),
             gravity: 9.8,
-            obstacles: vec![Obstacle {
-                position: Vec2::new(100.0, 200.0),
+            obstacles: vec![
+            // Ground
+            Obstacle {
+                position: Vec2::new(-180.0, -300.0),
+                size: Vec2::new(1400.0, 10.0),
+            },
+            Obstacle {
+                position: Vec2::new(-200.0, -200.0),
                 size: Vec2::new(50.0, 50.0),
-            }],
+            },
+            Obstacle {
+                position: Vec2::new(0.0, 200.0),
+                size: Vec2::new(50.0, 50.0),
+            },
+            ],
         },
         Map {
             name: "No Gravity Map".to_string(),

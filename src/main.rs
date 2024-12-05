@@ -24,6 +24,8 @@ use opentelemetry::global;
 use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
 use bevy::state::app::StatesPlugin;
+use bevy_rapier2d::prelude::CollisionEvent::Started;
+use bevy_rapier2d::rapier::prelude::CollisionEventFlags;
 use bevy_tokio_tasks::{TokioTasksPlugin, TokioTasksRuntime};
 use tracing::info;
 use uuid::Uuid;
@@ -36,19 +38,7 @@ use crate::game_logic::{GameEvent, ServerState};
 const BOUNDS: Vec2 = Vec2::new(900.0, 640.0);
 
 pub fn setup_physics(mut commands: Commands) {
-    commands.spawn((
-        TransformBundle::from(Transform::from_xyz(0.0, 100.0, 0.0)),
-        Collider::cuboid(80.0, 30.0),
-        Sensor,
-    ));
 
-    commands.spawn((
-        TransformBundle::from(Transform::from_xyz(0.0, 260.0, 0.0)),
-        RigidBody::Dynamic,
-        Collider::cuboid(10.0, 10.0),
-        ActiveEvents::COLLISION_EVENTS,
-        ContactForceEventThreshold(10.0),
-    ));
 }
 
 pub fn display_events_system(
@@ -56,12 +46,20 @@ pub fn display_events_system(
     mut contact_force_events: EventReader<ContactForceEvent>,
 ) {
     for collision_event in collision_events.read() {
-        println!("Received collision event: {collision_event:?}");
+        // We are particularly interested in a CollisionEvent
+        // between a ship and the finish line - that will trigger the game to end
+        // TODO how to get the 2 entities involved?
+        debug!("Received collision event: {collision_event:?}");
+        if let Started(entity1, entity2, s) = collision_event {
+            info!(?s, "Collision between entities: {entity1:?} and {entity2:?}");
+        }
+
     }
 
-    for contact_force_event in contact_force_events.read() {
-        println!("Received contact force event: {contact_force_event:?}");
-    }
+
+    // for contact_force_event in contact_force_events.read() {
+    //     println!("Received contact force event: {contact_force_event:?}");
+    // }
 }
 
 pub struct DriftPhysicsPlugin;
@@ -126,20 +124,51 @@ pub fn apply_keyboard_controls_system(
 //     // Iterate over ships and apply controls
 // }
 
+pub fn spawn_ships(
+    mut commands: Commands,
+    app_state: Res<AppState>,
+) {
+    // Spawn Ship
+    let sprite_size = 25.0;
+
+    commands.spawn((
+        crate::components::ControllableShip {
+            impulse: 10_000.0,
+            torque_impulse: 800.0,
+        },
+        SpriteBundle {
+            sprite: Sprite {
+                color: Color::srgb(0.0, 0.0, 0.0),
+                custom_size: Some(Vec2::new(sprite_size, sprite_size)),
+                ..Default::default()
+            },
+            transform: Transform::from_xyz(-200.0, 150.0, 0.0),
+            ..Default::default()
+        },
+        RigidBody::Dynamic,
+        //ExternalForce::default(),
+        Damping {
+            linear_damping: 0.2,
+            angular_damping: 0.95,
+        },
+        ExternalImpulse::default(),
+        AdditionalMassProperties::Mass(200.0),
+        Restitution::coefficient(0.9),
+        Friction::coefficient(0.5),
+        Collider::ball(sprite_size / 2.0),
+
+        ActiveEvents::COLLISION_EVENTS,
+        ContactForceEventThreshold(10.0),
+    ));
+}
+
+
 pub fn setup_scene(mut commands: Commands) {
     let maps = crate::map::load_maps();
     let map = &maps[0]; // Select the first map for now
 
     // Set up gravity using the map specific value
     //-map.gravity
-
-    // Ground
-    let ground_size = 500.0;
-    let ground_height = 10.0;
-    commands.spawn((
-        TransformBundle::from(Transform::from_xyz(0.0, -ground_height, 0.0)),
-        Collider::cuboid(ground_size, ground_height),
-    ));
 
     // Obstacles
     for obstacle in &map.obstacles {
@@ -153,35 +182,22 @@ pub fn setup_scene(mut commands: Commands) {
         ));
     }
 
-    // // Spawn Ship
-    // let sprite_size = 25.0;
-    //
-    // commands.spawn((
-    //     crate::components::ControllableShip {
-    //         impulse: 10_000.0,
-    //         torque_impulse: 800.0,
-    //     },
-    //     SpriteBundle {
-    //         sprite: Sprite {
-    //             color: Color::srgb(0.0, 0.0, 0.0),
-    //             custom_size: Some(Vec2::new(sprite_size, sprite_size)),
-    //             ..Default::default()
-    //         },
-    //         transform: Transform::from_xyz(-200.0, 150.0, 0.0),
-    //         ..Default::default()
-    //     },
-    //     RigidBody::Dynamic,
-    //     //ExternalForce::default(),
-    //     Damping {
-    //         linear_damping: 0.2,
-    //         angular_damping: 0.95,
-    //     },
-    //     ExternalImpulse::default(),
-    //     AdditionalMassProperties::Mass(200.0),
-    //     Restitution::coefficient(0.9),
-    //     Friction::coefficient(0.5),
-    //     Collider::ball(sprite_size / 2.0),
-    // ));
+    // Finish line sensor - TODO load from map data
+    commands.spawn((
+        TransformBundle::from(Transform::from_xyz(0.0, 100.0, 0.0)),
+        Collider::cuboid(80.0, 30.0),
+        Sensor,
+    ));
+
+    // A collider that will generate a test contact event if it goes through the finish line
+    commands.spawn((
+        TransformBundle::from(Transform::from_xyz(-30.0, 260.0, 0.0)),
+        RigidBody::Dynamic,
+        Collider::cuboid(10.0, 10.0),
+        ActiveEvents::COLLISION_EVENTS,
+        ContactForceEventThreshold(10.0),
+    ));
+
 }
 
 fn main() {
@@ -199,9 +215,8 @@ fn main() {
         .add_plugins(TokioTasksPlugin::default())
         .add_plugins(DriftPhysicsPlugin)
         .add_systems(Startup, network::setup_http)
-        .add_systems(Startup, setup_scene)
-        .add_systems(Update, game_logic::game_scheduler_system)
-        .add_event::<GameEvent>();
+        ;
+        //.add_event::<GameEvent>();
 
     #[cfg(feature = "ui")]
     {
@@ -221,10 +236,17 @@ fn main() {
     }
 
 
-    // TODO look at Bevy support for States:
-    // https://github.com/bevyengine/bevy/blob/latest/examples/games/game_menu.rs
+
     app
         .init_state::<ServerState>()
+        .add_systems(Update, game_logic::game_system.run_if(in_state(ServerState::Active)))
+        // See example for states:
+        // // https://github.com/bevyengine/bevy/blob/latest/examples/games/game_menu.rs
+        .add_systems(OnEnter(ServerState::Active), setup_scene)
+        .add_systems(OnEnter(ServerState::Active), spawn_ships)
+
+        .add_systems(OnEnter(ServerState::Inactive), game_logic::setup_game_scheduler)
+        .add_systems(Update, game_logic::game_scheduler_system.run_if(in_state(ServerState::Inactive)))
         .run();
 
     info!("Shutting down...");

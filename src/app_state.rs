@@ -12,6 +12,7 @@ pub struct AppState {
     // Stores players waiting in the lobby
     pub lobby: Arc<Mutex<Vec<PendingGame>>>,
     pub active_game: Arc<Mutex<Option<GameState>>>,
+
     // A channel for sending events from Axum to Bevy
     //pub game_events_tx: mpsc::UnboundedSender<GameEvent>,
 }
