@@ -66,7 +66,8 @@ pub struct DriftPhysicsPlugin;
 
 impl Plugin for DriftPhysicsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(50.0),));
+        app.add_plugins(
+            RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(50.0));
 
         app.add_systems(Startup, setup_physics);
 
@@ -128,13 +129,13 @@ pub fn spawn_ships(
     mut commands: Commands,
     app_state: Res<AppState>,
 ) {
-    // Spawn Ship
+    // Spawn a Ship for now - should be based on the players in the GameState
     let sprite_size = 25.0;
 
     commands.spawn((
         crate::components::ControllableShip {
-            impulse: 10_000.0,
-            torque_impulse: 800.0,
+            impulse: 8_000.0,
+            torque_impulse: 8_000.0,
         },
         SpriteBundle {
             sprite: Sprite {
@@ -149,7 +150,7 @@ pub fn spawn_ships(
         //ExternalForce::default(),
         Damping {
             linear_damping: 0.2,
-            angular_damping: 0.95,
+            angular_damping: 0.5,
         },
         ExternalImpulse::default(),
         AdditionalMassProperties::Mass(200.0),
@@ -163,24 +164,38 @@ pub fn spawn_ships(
 }
 
 
-pub fn setup_scene(mut commands: Commands) {
-    let maps = crate::map::load_maps();
-    let map = &maps[0]; // Select the first map for now
+pub fn setup_scene(
+    mut commands: Commands,
+    mut rapier_config: ResMut<RapierConfiguration>,
+    app_state: Res<AppState>
+) {
+    if let Some(active_game) = app_state.active_game.lock().unwrap().as_ref() {
+        info!(game_id=?active_game.game_id, "Setting up scene for game");
 
-    // Set up gravity using the map specific value
-    //-map.gravity
+        let maps = crate::map::load_maps();
+        // Select the map by name from the active GameState
+        let map = maps.get(&active_game.map_name)
+            .expect("Failed to load map by name");
 
-    // Obstacles
-    for obstacle in &map.obstacles {
-        commands.spawn((
-            TransformBundle::from(Transform::from_xyz(
-                obstacle.position.x,
-                obstacle.position.y,
-                0.0,
-            )),
-            Collider::cuboid(obstacle.size.x / 2.0, obstacle.size.y / 2.0),
-        ));
+        // Set up gravity using the map specific value
+        rapier_config.gravity = Vec2::Y * map.gravity;
+
+        // Obstacles
+        for obstacle in &map.obstacles {
+            commands.spawn((
+                TransformBundle::from(Transform::from_xyz(
+                    obstacle.position.x,
+                    obstacle.position.y,
+                    0.0,
+                )),
+                Collider::cuboid(obstacle.size.x / 2.0, obstacle.size.y / 2.0),
+            ));
+        }
+    } else {
+        info!("No active game to set up scene for");
+        return;
     }
+
 
     // Finish line sensor - TODO load from map data
     commands.spawn((
