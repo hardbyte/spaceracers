@@ -1,9 +1,9 @@
-use std::cmp::PartialEq;
-use std::ops::Deref;
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 use crate::app_state::AppState;
+use crate::components::ship::ControllableShip;
 use crate::game_state::{GameState, GameStatus};
+use crate::ship::Ship;
 
 const SPRITE_SIZE: f32 = 25.0;
 
@@ -12,16 +12,15 @@ const SPRITE_SIZE: f32 = 25.0;
 pub enum ServerState {
     #[default]
     Inactive,
-
     Active,
 }
+
 
 #[derive(Debug, Event)]
 pub enum GameEvent {
     GameStarted { game_id: uuid::Uuid },
     GameFinished { game_id: uuid::Uuid },
 }
-
 
 // This system will run during the Active state
 #[tracing::instrument(skip_all)]
@@ -53,12 +52,13 @@ pub fn game_system(
     // }
 }
 
-
 #[derive(Resource)]
 pub struct GameSchedulerConfig {
     pub timer: Timer,
     //pub game_start_delay: Duration,
 }
+
+
 
 pub fn setup_game_scheduler(mut commands: Commands) {
     tracing::info!("Setting up game scheduler");
@@ -95,8 +95,11 @@ pub fn game_scheduler_system(
                 // Create a new GameState from the pending game
                 let game_state = GameState::from(pending_game.clone());
 
+                tracing::info!(game.id=?game_state.game_id, state=?game_state, "Starting game");
+
                 // Update the active game
                 *active_game = Some(game_state.clone());
+
 
 
                 // https://github.com/bevyengine/bevy/blob/latest/examples/ecs/event.rs

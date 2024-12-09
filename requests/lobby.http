@@ -11,3 +11,13 @@ Content-Type: application/json
 ###
 GET {{host}}/state
 
+###
+
+POST {{host}}/control
+Content-Type: application/json
+
+{
+  "password": "password",
+  "thrust": 1,
+  "rotation": 0
+}

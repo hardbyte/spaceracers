@@ -1,5 +1,5 @@
 use crate::app_state::AppState;
-use crate::network::{game_state_route, lobby_route};
+use crate::network::{game_state_route, lobby_route, ship_control_route};
 
 use axum::routing::{get, post};
 use axum::Router;
@@ -15,5 +15,6 @@ pub fn create_app(app_state: AppState) -> Router {
         .route("/", get(root_handler))
         .route("/lobby", post(lobby_route::lobby_handler))
         .route("/state", get(game_state_route::state_handler))
+        .route("/control", post(ship_control_route::ship_control_handler))
         .with_state(app_state)
 }

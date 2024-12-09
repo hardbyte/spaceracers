@@ -1,22 +1,27 @@
 
 # SpaceRaceRS
 
-Code layout:
+Run the game with:
 
-```plaintext
-src/
-├── main.rs
-├── app.rs              // Application setup and router configuration
-├── lobby.rs            // Lobby management
-├── player.rs           // Player-related structures and logic
-├── game_state.rs       // Game state management
-├── routes.rs           // HTTP route handlers
-├── telemetry.rs        // Telemetry and logging setup
-└── tests/
-├── mod.rs
-├── lobby_tests.rs
-└── root_tests.rs
+```shell
+RUST_LOG=warn,spaceracers=debug cargo run --features ui
 ```
 
+## Architecture
 
-cargo run --features ui
+### Core Plugins:
+
+**NetworkPlugin**: 
+Handles HTTP endpoints and routes requests to/from the server.
+
+**ControlPlugin**: 
+Receives and stores control inputs (thrust/rotation) per player, to be applied by a physics update system.
+Periodically updates a shared in-memory snapshot of the game state (positions, velocities) that the HTTP layer can serve.
+
+**PhysicsPlugin**: 
+Sets up Rapier and applies control forces each frame to update ship positions.
+
+**GameLogicPlugin** (to extract from main): 
+Manages game state transitions, including game start/end conditions and integrating with the lobby system.
+
+

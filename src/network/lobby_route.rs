@@ -11,6 +11,7 @@ use std::ops::Deref;
 use std::time::Duration;
 use tracing::info;
 use uuid::Uuid;
+use crate::game_state::PendingGame;
 
 const MIN_PLAYERS: usize = 1; // Minimum players to start a game
 const MAX_PLAYERS: usize = 5; // Maximum players for a game
@@ -25,23 +26,6 @@ pub struct LobbyResponse {
     pub player_id: String,
     pub game_id: String,
     pub map: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct PendingGame {
-    pub game_id: Uuid,
-    pub players: Vec<Player>,
-    pub map_name: String,
-}
-
-impl PendingGame {
-    pub(crate) fn new() -> PendingGame {
-        PendingGame {
-            game_id: Uuid::new_v4(),
-            players: vec![],
-            map_name: "default_map".to_string(),
-        }
-    }
 }
 
 #[axum::debug_handler]

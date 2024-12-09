@@ -2,12 +2,22 @@ use bevy::prelude::Res;
 use bevy_tokio_tasks::TokioTasksRuntime;
 use tracing::info;
 use std::net::SocketAddr;
+use bevy::prelude::*;
 use crate::app_state::AppState;
 use crate::network;
 
-pub mod api;
-pub mod lobby_route;
-pub mod game_state_route;
+mod api;
+mod lobby_route;
+mod game_state_route;
+mod ship_control_route;
+
+pub struct NetworkPlugin;
+
+impl Plugin for NetworkPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Startup, setup_http);
+    }
+}
 
 pub fn setup_http(runtime: Res<TokioTasksRuntime>, app_state: Res<AppState>) {
     info!("Setting up HTTP routes");

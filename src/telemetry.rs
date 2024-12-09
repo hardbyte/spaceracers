@@ -7,7 +7,7 @@ pub fn init() {
     // Configure the stdout fmt layer
     let format = tracing_subscriber::fmt::format()
         .with_level(true)
-        .with_target(false)
+        .with_target(true)
         .with_thread_ids(false)
         .with_thread_names(false)
         .compact();
