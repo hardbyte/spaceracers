@@ -1,13 +1,12 @@
-use serde::{Deserialize, Serialize};
-use axum::extract::State;
-use axum::Json;
-use std::ops::Deref;
-use uuid::Uuid;
 use crate::app_state::AppState;
 use crate::control::ShipInput;
 use crate::game_state::{GameState, GameStatus};
 use crate::ship::Ship;
-
+use axum::extract::State;
+use axum::Json;
+use serde::{Deserialize, Serialize};
+use std::ops::Deref;
+use uuid::Uuid;
 
 #[derive(Deserialize)]
 pub struct ControlInput {
@@ -18,7 +17,6 @@ pub struct ControlInput {
     // Rotation is either -1, 0, or 1 for left, none, or right rotational thrust
     rotation: i8,
 }
-
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ShipControlResponse {
@@ -39,15 +37,28 @@ pub async fn ship_control_handler(
             .record("game.id", game_state.game_id.to_string().deref());
         // 2. If valid, update the `AppState.control_inputs` for this player
         let mut control_inputs = state.control_inputs.lock().unwrap();
-        control_inputs.insert(player.id, ShipInput {
-            thrust: input.thrust.into(),
-            rotation: input.rotation.into(),
-        });
-        tracing::Span::current().record("player.input", &format!("{:?}", control_inputs.get(&player.id)));
-        tracing::debug!(input=&format!("{:?}", control_inputs.get(&player.id)), "Updated control input");
-        Json(ShipControlResponse { status: "ok".to_string() })
+        control_inputs.insert(
+            player.id,
+            ShipInput {
+                thrust: input.thrust.into(),
+                rotation: input.rotation.into(),
+            },
+        );
+        tracing::Span::current().record(
+            "player.input",
+            &format!("{:?}", control_inputs.get(&player.id)),
+        );
+        tracing::debug!(
+            input = &format!("{:?}", control_inputs.get(&player.id)),
+            "Updated control input"
+        );
+        Json(ShipControlResponse {
+            status: "ok".to_string(),
+        })
     } else {
         // 3. Respond with a `ShipControlResponse` indicating failure.
-        Json(ShipControlResponse { status: "error".to_string() })
+        Json(ShipControlResponse {
+            status: "error".to_string(),
+        })
     }
 }

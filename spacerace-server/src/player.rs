@@ -9,7 +9,6 @@ pub struct PlayerRegistration {
     pub password: String,
 }
 
-
 #[derive(Component, Debug, Serialize, Deserialize, Clone)]
 pub struct Player {
     pub id: uuid::Uuid,

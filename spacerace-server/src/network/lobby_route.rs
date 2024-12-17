@@ -1,4 +1,5 @@
 use crate::app_state::AppState;
+use crate::game_state::PendingGame;
 use crate::game_state::{GameState, GameStatus};
 use crate::player::{Player, PlayerRegistration};
 use crate::ship::Ship;
@@ -11,7 +12,6 @@ use std::ops::Deref;
 use std::time::Duration;
 use tracing::info;
 use uuid::Uuid;
-use crate::game_state::PendingGame;
 
 const MIN_PLAYERS: usize = 1; // Minimum players to start a game
 const MAX_PLAYERS: usize = 5; // Maximum players for a game
@@ -83,4 +83,3 @@ pub async fn lobby_handler(
         map: pending_game.map_name.clone(),
     })
 }
-

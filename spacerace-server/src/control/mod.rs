@@ -1,7 +1,6 @@
 mod control_plugin;
 pub use control_plugin::ControlPlugin;
 
-
 #[derive(Clone, Debug)]
 pub struct ShipInput {
     pub thrust: f32,

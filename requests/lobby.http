@@ -31,3 +31,13 @@ Content-Type: application/json
   "thrust": 1,
   "rotation": 0
 }
+###
+
+POST {{host}}/control
+Content-Type: application/json
+
+{
+  "password": "password2",
+  "thrust": 0,
+  "rotation": 10
+}

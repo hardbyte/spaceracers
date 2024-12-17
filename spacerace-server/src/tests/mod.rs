@@ -118,7 +118,10 @@ mod tests {
     async fn test_state_endpoint() {
         let app_state = AppState::new();
         let app = axum::Router::new()
-            .route("/state", get(crate::network::game_state_route::state_handler))
+            .route(
+                "/state",
+                get(crate::network::game_state_route::state_handler),
+            )
             .with_state(app_state.clone());
 
         let response = app
