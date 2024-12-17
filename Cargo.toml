@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "spacerace-server",
+    "spacerace-client",
 ]
 
 [workspace.dependencies]

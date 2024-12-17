@@ -6,13 +6,19 @@
 Run the game with:
 
 ```shell
-RUST_LOG=warn,spaceracers=debug cargo run
+cargo run
 ```
 
-By default there is no UI, but you can enable it with the `ui` feature:
+Enable logging by setting the `RUST_LOG` environment variable. For example:
+
+```
+RUST_LOG=warn,spaceracers=debug
+```
+
+By default, there is no UI, but you can enable it with the `ui` feature:
 
 ```shell
-RUST_LOG=warn,spaceracers=debug cargo run --features ui
+cargo run --features ui
 ```
 
 Or run with wayland support:
