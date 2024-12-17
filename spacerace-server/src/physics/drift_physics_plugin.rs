@@ -96,6 +96,5 @@ pub fn apply_keyboard_controls_system(
                 rotation: rotation as f32,
             },
         );
-
     }
 }
