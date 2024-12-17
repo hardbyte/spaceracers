@@ -1,11 +1,11 @@
-use serde::{Deserialize, Serialize};
-use axum::extract::{Query, State};
-use axum::Json;
-use std::ops::Deref;
-use uuid::Uuid;
 use crate::app_state::AppState;
 use crate::game_state::{GameState, GameStatus};
 use crate::ship::Ship;
+use axum::extract::{Query, State};
+use axum::Json;
+use serde::{Deserialize, Serialize};
+use std::ops::Deref;
+use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum StateResponse {
@@ -48,16 +48,15 @@ pub async fn state_handler(
         Some(game) => game,
         None => {
             tracing::warn!("state requested but no game running");
-            return Json(StateResponse::Inactive)
-        },
+            return Json(StateResponse::Inactive);
+        }
     };
 
     let query_game_id = query
         .map(|q| q.game_id.clone())
         .unwrap_or_else(|| active_game.game_id.to_string());
 
-    tracing::Span::current()
-        .record("game.id", &active_game.game_id.to_string().deref());
+    tracing::Span::current().record("game.id", &active_game.game_id.to_string().deref());
 
     if query_game_id == active_game.game_id.to_string() {
         let public_game_state = PublicGameState::from(active_game);

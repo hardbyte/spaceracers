@@ -1,12 +1,12 @@
-use crate::game_state::{GameState};
+use crate::control::ShipInput;
+use crate::game_state::GameState;
 use crate::game_state::PendingGame;
+use crate::player::Player;
 use bevy::prelude::Resource;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use tokio::sync::mpsc;
 use uuid::Uuid;
-use crate::control::ShipInput;
-use crate::player::Player;
 
 // Application state will be shared between tokio and bevy so needs to be thread-safe
 #[derive(Clone, Debug, Resource)]
@@ -17,7 +17,6 @@ pub struct AppState {
 
     // Stores current inputs from players
     pub control_inputs: Arc<Mutex<HashMap<Uuid, ShipInput>>>,
-
 }
 
 impl AppState {

@@ -1,9 +1,9 @@
-use bevy::prelude::*;
-use bevy_rapier2d::prelude::*;
 use crate::app_state::AppState;
 use crate::components::ship::ControllableShip;
 use crate::game_state::{GameState, GameStatus};
 use crate::ship::Ship;
+use bevy::prelude::*;
+use bevy_rapier2d::prelude::*;
 
 const SPRITE_SIZE: f32 = 25.0;
 
@@ -14,7 +14,6 @@ pub enum ServerState {
     Inactive,
     Active,
 }
-
 
 #[derive(Debug, Event)]
 pub enum GameEvent {
@@ -33,7 +32,6 @@ pub fn game_system(
 
     // TODO we may not need this at all...
     // perhaps need to call periodically and check if the game is over
-
 
     // If the game is over we can either transition to Inactive or directly start a new game from the lobby
     //
@@ -57,8 +55,6 @@ pub struct GameSchedulerConfig {
     pub timer: Timer,
     //pub game_start_delay: Duration,
 }
-
-
 
 pub fn setup_game_scheduler(mut commands: Commands) {
     tracing::info!("Setting up game scheduler");
@@ -100,8 +96,6 @@ pub fn game_scheduler_system(
                 // Update the active game
                 *active_game = Some(game_state.clone());
 
-
-
                 // https://github.com/bevyengine/bevy/blob/latest/examples/ecs/event.rs
                 // tracing::debug!("Sending a GameStarted event");
                 // writer.send(GameEvent::GameStarted {
@@ -111,7 +105,6 @@ pub fn game_scheduler_system(
                 tracing::info!("Transitioning Server State to Active");
                 // Transition to Active
                 next_server_state.set(ServerState::Active);
-
             }
         }
     }

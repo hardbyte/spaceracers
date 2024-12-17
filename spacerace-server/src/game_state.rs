@@ -1,9 +1,9 @@
 use crate::player::Player;
+use crate::ship::Ship;
+use bevy::prelude::Entity;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use bevy::prelude::Entity;
 use uuid::Uuid;
-use crate::ship::Ship;
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
 pub enum GameStatus {
@@ -21,8 +21,6 @@ pub struct GameState {
     pub map_name: String,
     pub state: GameStatus,
 }
-
-
 
 impl From<PendingGame> for GameState {
     fn from(pending_game: PendingGame) -> Self {

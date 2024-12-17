@@ -1,14 +1,14 @@
-use bevy::prelude::Res;
-use bevy_tokio_tasks::TokioTasksRuntime;
-use tracing::info;
-use std::net::SocketAddr;
-use bevy::prelude::*;
 use crate::app_state::AppState;
 use crate::network;
+use bevy::prelude::Res;
+use bevy::prelude::*;
+use bevy_tokio_tasks::TokioTasksRuntime;
+use std::net::SocketAddr;
+use tracing::info;
 
-mod api;
-mod lobby_route;
-mod game_state_route;
+pub(crate) mod api;
+pub(crate) mod game_state_route;
+pub(crate) mod lobby_route;
 mod ship_control_route;
 
 pub struct NetworkPlugin;

@@ -1,21 +1,19 @@
-use bevy::prelude::{Commands, EventReader, KeyCode, Query, Res, Transform};
-use bevy::input::ButtonInput;
-use bevy_rapier2d::dynamics::ExternalImpulse;
-use bevy::math::{Vec2, Vec3};
-use bevy_rapier2d::pipeline::{CollisionEvent, ContactForceEvent};
-use tracing::{debug, info};
-use bevy_rapier2d::pipeline::CollisionEvent::Started;
-use bevy::app::{App, Plugin, PostUpdate, Startup, Update};
-use bevy_rapier2d::plugin::{NoUserData, RapierPhysicsPlugin};
 use crate::app_state::AppState;
 use crate::components;
+use bevy::app::{App, Plugin, PostUpdate, Startup, Update};
+use bevy::input::ButtonInput;
+use bevy::math::{Vec2, Vec3};
+use bevy::prelude::{Commands, EventReader, KeyCode, Query, Res, Transform};
+use bevy_rapier2d::dynamics::ExternalImpulse;
+use bevy_rapier2d::pipeline::CollisionEvent::Started;
+use bevy_rapier2d::pipeline::{CollisionEvent, ContactForceEvent};
+use bevy_rapier2d::plugin::{NoUserData, RapierPhysicsPlugin};
+use tracing::{debug, info};
 
 // TODO make these based on the map size
 const BOUNDS: Vec2 = Vec2::new(900.0, 640.0);
 
-pub fn setup_physics(mut commands: Commands) {
-
-}
+pub fn setup_physics(mut commands: Commands) {}
 
 pub fn display_events_system(
     mut collision_events: EventReader<CollisionEvent>,
@@ -27,11 +25,12 @@ pub fn display_events_system(
         // TODO how to get the 2 entities involved?
         debug!("Received collision event: {collision_event:?}");
         if let Started(entity1, entity2, s) = collision_event {
-            info!(?s, "Collision between entities: {entity1:?} and {entity2:?}");
+            info!(
+                ?s,
+                "Collision between entities: {entity1:?} and {entity2:?}"
+            );
         }
-
     }
-
 
     // for contact_force_event in contact_force_events.read() {
     //     println!("Received contact force event: {contact_force_event:?}");
@@ -42,8 +41,7 @@ pub struct DriftPhysicsPlugin;
 
 impl Plugin for DriftPhysicsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(
-            RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(50.0));
+        app.add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(50.0));
 
         app.add_systems(Startup, setup_physics);
 
@@ -58,10 +56,9 @@ impl Plugin for DriftPhysicsPlugin {
 }
 
 pub fn apply_bounds_system(
-    mut player_info: Query<(&components::ship::ControllableShip, &mut Transform,)>,
+    mut player_info: Query<(&components::ship::ControllableShip, &mut Transform)>,
 ) {
     for (player, mut transform) in &mut player_info {
-
         // TODO fix this
         // bound the ship within invisible level bounds
         let extents = Vec3::from((crate::physics::drift_physics_plugin::BOUNDS / 2.0, 0.0));
@@ -92,11 +89,13 @@ pub fn apply_keyboard_controls_system(
         // via the network.
         let mut control_inputs_lock = app_state.control_inputs.lock().unwrap();
         let player_uuid = player.id.clone();
-        control_inputs_lock.insert(player_uuid, crate::control::ShipInput {
-            thrust: thrust as f32,
-            rotation: rotation as f32,
-        });
-
+        control_inputs_lock.insert(
+            player_uuid,
+            crate::control::ShipInput {
+                thrust: thrust as f32,
+                rotation: rotation as f32,
+            },
+        );
 
         // // Thrust exerts an impulse on the rigid body along the axis the ship is facing (not traveling)
         // // get the ship's forward vector by applying the current rotation to the ships initial facing
@@ -111,6 +110,5 @@ pub fn apply_keyboard_controls_system(
         //
         // // Apply a torque impulse to the rigid body
         // rb_imps.torque_impulse = rotation as f32 * player.torque_impulse;
-
     }
 }
