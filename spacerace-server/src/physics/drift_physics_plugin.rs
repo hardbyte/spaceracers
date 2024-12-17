@@ -97,18 +97,5 @@ pub fn apply_keyboard_controls_system(
             },
         );
 
-        // // Thrust exerts an impulse on the rigid body along the axis the ship is facing (not traveling)
-        // // get the ship's forward vector by applying the current rotation to the ships initial facing
-        // // vector
-        // let heading = transform.rotation * Vec3::Y;
-        // // Ignore z axis
-        // let heading_2d = Vec2::new(heading.x, heading.y);
-        //
-        //
-        // // Apply an impulse to the rigid body along the ship axis
-        // rb_imps.impulse = thrust as f32 * heading_2d * player.impulse;
-        //
-        // // Apply a torque impulse to the rigid body
-        // rb_imps.torque_impulse = rotation as f32 * player.torque_impulse;
     }
 }
