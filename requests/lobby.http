@@ -9,6 +9,16 @@ Content-Type: application/json
 }
 
 ###
+POST {{host}}/lobby
+Content-Type: application/json
+
+{
+  "name": "Player 2",
+  "team": "The A Team",
+  "password": "password2"
+}
+
+###
 GET {{host}}/state
 
 ###

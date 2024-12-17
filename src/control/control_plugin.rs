@@ -47,7 +47,7 @@ fn apply_controls_system(
         let control_input = match control_inputs_lock.get(&player_uuid) {
             Some(input) => input,
             None => {
-                tracing::debug!(player.id = ?player.id, "No control input found");
+                tracing::trace!(player.id = ?player.id, "No control input found");
                 continue;
             }
         };

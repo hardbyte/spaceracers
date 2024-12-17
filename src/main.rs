@@ -171,6 +171,7 @@ fn main() {
     #[cfg(not(feature = "ui"))]
     {
         app.add_plugins(MinimalPlugins);
+        app.add_plugins(StatesPlugin);
     }
 
     app
