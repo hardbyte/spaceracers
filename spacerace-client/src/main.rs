@@ -1,11 +1,11 @@
 use crossterm::event::{self, Event, KeyCode};
 use crossterm::{cursor, execute, terminal};
+use rand::distributions::DistString;
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::io::{stdout, Write};
 use std::time::Duration;
-use rand::distributions::DistString;
-use rand::Rng;
 use tokio::time::sleep;
 use tracing::{debug, error, info};
 use tracing_subscriber;
@@ -90,11 +90,12 @@ struct ControlResponse {
     status: String,
 }
 
-
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     // Set up logging with INFO level by default.
-    tracing_subscriber::fmt().with_max_level(tracing::Level::INFO).init();
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::INFO)
+        .init();
 
     // Read configuration from environment variables or use defaults.
     let host = env::var("HOST").unwrap_or_else(|_| DEFAULT_HOST.to_string());
@@ -156,7 +157,11 @@ async fn main() -> anyhow::Result<()> {
 /// * `client` - The HTTP client for sending requests.
 /// * `player_password` - The password of the current player.
 /// * `host` - The server host URL.
-async fn run_game_loop(client: reqwest::Client, player_password: String, host: String) -> anyhow::Result<()> {
+async fn run_game_loop(
+    client: reqwest::Client,
+    player_password: String,
+    host: String,
+) -> anyhow::Result<()> {
     let mut stdout = stdout();
 
     loop {
@@ -182,7 +187,10 @@ async fn run_game_loop(client: reqwest::Client, player_password: String, host: S
         // Determine thrust and rotation based on user input
         let thrust_rotation = if let GameStateResponse::Active(active) = &state_response {
             if active.state != "Active" && active.state != "Queued" {
-                debug!("Game is not in an active state (state: {}). Press 'q' to quit.", active.state);
+                debug!(
+                    "Game is not in an active state (state: {}). Press 'q' to quit.",
+                    active.state
+                );
                 thrust_rotation_from_input_with_timeout(Duration::from_millis(200))?
             } else {
                 // Game is active or queued, allow user to control
