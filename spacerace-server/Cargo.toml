@@ -25,3 +25,4 @@ tracing-subscriber = { version = "0.3.19", features=["fmt", "env-filter", "json"
 bevy = { version = "0.15.0", features = [] }
 bevy_rapier2d = { version = "0.28.0", features = ["simd-stable", "parallel", "serde", "headless", "serde-serialize"] }
 bevy-tokio-tasks = { git = "https://github.com/foxzool/bevy-tokio-tasks.git", branch = "upgrade" }
+rand = "0.8.5"

@@ -5,8 +5,6 @@ use crate::ship::Ship;
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
-const SPRITE_SIZE: f32 = 25.0;
-
 // Enum that will be used as a global state for the game server
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
 pub enum ServerState {

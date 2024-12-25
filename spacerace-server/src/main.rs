@@ -14,11 +14,13 @@ mod tests;
 mod control;
 #[cfg(feature = "ui")]
 mod graphics_plugin;
+mod lobby_graphics_plugin;
 
 use crate::components::{Name, Person};
 use app_state::AppState;
 use axum::extract::State;
 use axum::Json;
+use bevy::color::palettes::tailwind::BLUE_400;
 use bevy::prelude::*;
 use bevy::state::app::StatesPlugin;
 use bevy_rapier2d::prelude::CollisionEvent::Started;
@@ -26,6 +28,7 @@ use bevy_rapier2d::prelude::*;
 use bevy_rapier2d::rapier::prelude::CollisionEventFlags;
 use bevy_tokio_tasks::{TokioTasksPlugin, TokioTasksRuntime};
 use opentelemetry::global;
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
 use tracing::info;
@@ -39,27 +42,28 @@ use crate::game_logic::{GameEvent, ServerState};
 pub fn spawn_ships(mut commands: Commands, app_state: Res<AppState>) {
     // Spawn a Ship for each player in the active GameState
     let sprite_size = 25.0;
+    let mut rng = rand::thread_rng();
 
     let active_game_guard = app_state.active_game.lock().unwrap();
     if let Some(active_game) = active_game_guard.as_ref() {
         for player in &active_game.players {
+            // Generate a random hue for this player's ship
+            let hue = rng.gen_range(0.0..360.0);
+            let color = Color::hsl(hue, 0.8, 0.5);
+
             commands.spawn((
                 components::ship::ControllableShip {
                     id: player.id,
                     impulse: 8_000.0,
                     torque_impulse: 8_000.0,
                 },
-                SpriteBundle {
-                    sprite: Sprite {
-                        color: Color::srgb(0.0, 0.0, 0.0),
-                        custom_size: Some(Vec2::new(sprite_size, sprite_size)),
-                        ..Default::default()
-                    },
-                    transform: Transform::from_xyz(-200.0, 150.0, 0.0),
+                Sprite {
+                    color,
+                    custom_size: Some(Vec2::new(sprite_size, sprite_size)),
                     ..Default::default()
                 },
+                Transform::from_xyz(-200.0, 150.0, 0.0),
                 RigidBody::Dynamic,
-                //ExternalForce::default(),
                 Damping {
                     linear_damping: 0.2,
                     angular_damping: 0.5,
@@ -87,7 +91,7 @@ pub fn setup_scene(
     if let Some(active_game) = app_state.active_game.lock().unwrap().as_ref() {
         info!(game_id=?active_game.game_id, "Setting up scene for game");
 
-        let maps = crate::map::load_maps();
+        let maps = map::load_maps();
         // Select the map by name from the active GameState
         let map = maps
             .get(&active_game.map_name)
@@ -99,11 +103,7 @@ pub fn setup_scene(
         // Obstacles
         for obstacle in &map.obstacles {
             commands.spawn((
-                TransformBundle::from(Transform::from_xyz(
-                    obstacle.position.x,
-                    obstacle.position.y,
-                    0.0,
-                )),
+                Transform::from_xyz(obstacle.position.x, obstacle.position.y, 0.0),
                 Collider::cuboid(obstacle.size.x / 2.0, obstacle.size.y / 2.0),
             ));
         }
@@ -114,18 +114,9 @@ pub fn setup_scene(
 
     // Finish line sensor - TODO load from map data
     commands.spawn((
-        TransformBundle::from(Transform::from_xyz(0.0, 100.0, 0.0)),
+        Transform::from_xyz(0.0, 100.0, 0.0),
         Collider::cuboid(80.0, 30.0),
         Sensor,
-    ));
-
-    // A collider that will generate a test contact event if it goes through the finish line
-    commands.spawn((
-        TransformBundle::from(Transform::from_xyz(-30.0, 260.0, 0.0)),
-        RigidBody::Dynamic,
-        Collider::cuboid(10.0, 10.0),
-        ActiveEvents::COLLISION_EVENTS,
-        ContactForceEventThreshold(10.0),
     ));
 }
 

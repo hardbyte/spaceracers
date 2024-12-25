@@ -221,6 +221,21 @@ async fn run_game_loop(
             debug!("Control Response: {:?}", control_resp);
         }
 
+        // Output the game state
+        if let GameStateResponse::Active(active) = &state_response {
+            for ship in &active.ships {
+                println!(
+                    "Ship ID: {}, Position: ({:.1}, {:.1}), Velocity: ({:.1}, {:.1}), Orientation: {:.1}",
+                    ship.id,
+                    ship.position[0],
+                    ship.position[1],
+                    ship.velocity[0],
+                    ship.velocity[1],
+                    ship.orientation
+                );
+            }
+        }
+
         stdout.flush()?;
         // Throttle updates slightly to avoid high CPU usage
         sleep(Duration::from_millis(100)).await;
