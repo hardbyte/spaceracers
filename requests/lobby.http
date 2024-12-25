@@ -4,7 +4,7 @@ Content-Type: application/json
 
 {
   "name": "Player 1",
-  "team": "The A Team",
+  "team": "The B Team",
   "password": "password"
 }
 

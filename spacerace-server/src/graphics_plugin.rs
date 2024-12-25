@@ -1,7 +1,8 @@
 use bevy::app::{App, Plugin, PluginGroup, Startup};
 use bevy::color::Color;
-use bevy::prelude::{default, Camera2dBundle, ClearColor, Commands, Window, WindowPlugin};
-use bevy::DefaultPlugins;
+use bevy::prelude::{default, Camera2d, ClearColor, Commands};
+
+use crate::lobby_graphics_plugin::LobbyGraphicsPlugin;
 use bevy_rapier2d::prelude::RapierDebugRenderPlugin;
 
 // I'm using this to visualize the physics engine
@@ -9,10 +10,7 @@ use bevy_rapier2d::prelude::RapierDebugRenderPlugin;
 pub struct GraphicsPlugin;
 
 fn setup_graphics(mut commands: Commands) {
-    commands.spawn(Camera2dBundle {
-        transform: Default::default(),
-        ..default()
-    });
+    commands.spawn(Camera2d { ..default() });
 }
 
 impl Plugin for GraphicsPlugin {
@@ -25,6 +23,7 @@ impl Plugin for GraphicsPlugin {
         )));
 
         app.add_systems(Startup, setup_graphics);
-        app.add_plugins((RapierDebugRenderPlugin::default()));
+        app.add_plugins(RapierDebugRenderPlugin::default());
+        app.add_plugins(LobbyGraphicsPlugin);
     }
 }
