@@ -38,6 +38,6 @@ Content-Type: application/json
 
 {
   "password": "password2",
-  "thrust": 0,
-  "rotation": 10
+  "thrust": 1.5,
+  "rotation": 0
 }

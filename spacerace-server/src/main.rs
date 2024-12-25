@@ -81,7 +81,7 @@ pub fn spawn_ships(mut commands: Commands, app_state: Res<AppState>) {
 
 pub fn setup_scene(
     mut commands: Commands,
-    mut rapier_config: ResMut<RapierConfiguration>,
+    mut rapier_config: Query<&mut RapierConfiguration>,
     app_state: Res<AppState>,
 ) {
     if let Some(active_game) = app_state.active_game.lock().unwrap().as_ref() {
@@ -94,7 +94,7 @@ pub fn setup_scene(
             .expect("Failed to load map by name");
 
         // Set up gravity using the map specific value
-        rapier_config.gravity = Vec2::Y * map.gravity;
+        rapier_config.single_mut().gravity = Vec2::Y * map.gravity;
 
         // Obstacles
         for obstacle in &map.obstacles {
