@@ -59,7 +59,7 @@ mod tests {
         let lobby_response: LobbyResponse = serde_json::from_slice(&body_bytes).unwrap();
 
         assert_eq!(lobby_response.player_id, "TestPlayer");
-        assert_eq!(lobby_response.map, "default_map");
+        assert_eq!(lobby_response.map, "tiled");
         // assert that the response game ID is a valid UUID
         assert!(Uuid::parse_str(&lobby_response.game_id).is_ok());
     }

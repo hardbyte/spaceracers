@@ -3,5 +3,3 @@ resolver = "2"
 members = [
     "spacerace-server",
 ]
-
-[workspace.dependencies]
