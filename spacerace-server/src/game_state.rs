@@ -46,7 +46,7 @@ impl PendingGame {
         PendingGame {
             game_id: Uuid::new_v4(),
             players: vec![],
-            map_name: "default_map".to_string(),
+            map_name: "tiled".to_string(),
         }
     }
 }

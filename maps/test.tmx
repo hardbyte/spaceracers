@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="0" nextlayerid="4" nextobjectid="3">
+ <editorsettings>
+  <export target="test.json" format="json"/>
+ </editorsettings>
+ <properties>
+  <property name="foo" value="bar"/>
+ </properties>
+ <objectgroup id="2" name="Object Layer 1">
+  <object id="1" x="3.50472" y="-2.33648">
+   <properties>
+    <property name="gravity" value="12"/>
+   </properties>
+   <polygon points="0,0 254.676,1.16824 339.373,217.876 311.336,297.317 115.071,390.192 -0.584119,378.509"/>
+  </object>
+  <object id="2" x="518.698" y="60.7484">
+   <polygon points="0,0 71.2625,228.975 -102.805,371.5 -39.136,505.847 215.54,543.815 297.317,401.29 248.835,223.718 211.451,-64.2531 -84.1132,-61.9166"/>
+  </object>
+ </objectgroup>
+</map>
