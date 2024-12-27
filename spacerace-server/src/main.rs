@@ -104,7 +104,7 @@ pub fn setup_scene(
         for obstacle in &map.obstacles {
             commands.spawn((
                 Transform::from_xyz(obstacle.position.x, obstacle.position.y, 0.0),
-                Collider::cuboid(obstacle.size.x / 2.0, obstacle.size.y / 2.0),
+                Collider::polyline(obstacle.polygon.clone(), None),
             ));
         }
     } else {

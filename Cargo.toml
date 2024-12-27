@@ -4,5 +4,3 @@ members = [
     "spacerace-server",
     "spacerace-client",
 ]
-
-[workspace.dependencies]
