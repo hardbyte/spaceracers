@@ -186,6 +186,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "anyhow"
+version = "1.0.95"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "34ac096ce696dc2fcabef30516bb13c0a68a11d30131d3df6f04711467681b04"
+
+[[package]]
 name = "approx"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -410,6 +416,15 @@ dependencies = [
  "object",
  "rustc-demangle",
  "windows-targets 0.52.6",
+]
+
+[[package]]
+name = "base64"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0b25d992356d2eb0ed82172f5248873db5560c4721f564b13cb5193bda5e668e"
+dependencies = [
+ "byteorder",
 ]
 
 [[package]]
@@ -4398,6 +4413,7 @@ dependencies = [
 name = "spacerace-server"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "axum",
  "bevy",
  "bevy-tokio-tasks",
@@ -4409,6 +4425,7 @@ dependencies = [
  "opentelemetry",
  "serde",
  "serde_json",
+ "tiled-json-rs",
  "tokio",
  "tower",
  "tracing",
@@ -4562,6 +4579,17 @@ checksum = "8b9ef9bad013ada3808854ceac7b46812a6465ba368859a37e2100283d2d719c"
 dependencies = [
  "cfg-if",
  "once_cell",
+]
+
+[[package]]
+name = "tiled-json-rs"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "679524ba7ce120ddacce4e9ed04b6ad458b231d9a141616775a3b2163eb23704"
+dependencies = [
+ "base64 0.10.1",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

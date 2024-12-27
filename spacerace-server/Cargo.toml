@@ -22,6 +22,8 @@ http-body-util = "0.1.2"
 http = "1.2"
 mime = "0.3.17"
 tracing-subscriber = { version = "0.3.19", features=["fmt", "env-filter", "json", "tracing-log"] }
-bevy = { version = "0.15.0", features = [] }
+bevy = { version = "0.15.0", features = ["wayland"] }
 bevy_rapier2d = { version = "0.28.0", features = ["simd-stable", "parallel", "serde", "headless", "serde-serialize"] }
 bevy-tokio-tasks = { git = "https://github.com/foxzool/bevy-tokio-tasks.git", branch = "upgrade" }
+anyhow = "1.0.95"
+tiled-json-rs = "0.2.6"

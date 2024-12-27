@@ -98,14 +98,7 @@ pub fn setup_scene(
 
         // Obstacles
         for obstacle in &map.obstacles {
-            commands.spawn((
-                TransformBundle::from(Transform::from_xyz(
-                    obstacle.position.x,
-                    obstacle.position.y,
-                    0.0,
-                )),
-                Collider::cuboid(obstacle.size.x / 2.0, obstacle.size.y / 2.0),
-            ));
+            commands.spawn((Collider::polyline(obstacle.polygon.clone(), None),));
         }
     } else {
         info!("No active game to set up scene for");
