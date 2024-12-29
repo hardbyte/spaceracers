@@ -10,7 +10,7 @@ use tokio::time::sleep;
 use tracing::{debug, error, info};
 use tracing_subscriber;
 
-/// A constant fallback host if the HOST environment variable isn't set.
+/// Fallback to localhost
 const DEFAULT_HOST: &str = "http://localhost:5000";
 
 /// A request to join the lobby, registering a player.
@@ -98,7 +98,7 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     // Read configuration from environment variables or use defaults.
-    let host = env::var("HOST").unwrap_or_else(|_| DEFAULT_HOST.to_string());
+    let host = env::var("SPACERACERS_SERVER").unwrap_or_else(|_| DEFAULT_HOST.to_string());
     let player_name = env::var("PLAYER_NAME").unwrap_or_else(|_| "Player".to_string());
     let player_password = env::var("PLAYER_PASSWORD").unwrap_or_else(|_| {
         rand::distributions::Alphanumeric.sample_string(&mut rand::thread_rng(), 16)
@@ -160,14 +160,14 @@ async fn main() -> anyhow::Result<()> {
 async fn run_game_loop(
     client: reqwest::Client,
     player_password: String,
-    host: String,
+    server_url: String,
 ) -> anyhow::Result<()> {
     let mut stdout = stdout();
 
     loop {
         // Get current game state
         let state_response = client
-            .get(format!("{}/state", host))
+            .get(format!("{}/state", server_url))
             .send()
             .await?
             .error_for_status()?
@@ -210,7 +210,7 @@ async fn run_game_loop(
             };
 
             let control_resp: ControlResponse = client
-                .post(format!("{}/control", host))
+                .post(format!("{}/control", server_url))
                 .json(&control_req)
                 .send()
                 .await?
@@ -238,7 +238,7 @@ async fn run_game_loop(
 
         stdout.flush()?;
         // Throttle updates slightly to avoid high CPU usage
-        sleep(Duration::from_millis(100)).await;
+        sleep(Duration::from_millis(30)).await;
     }
 }
 
