@@ -18,7 +18,7 @@ RUST_LOG=warn,spaceracers=debug
 By default, there is no UI, but you can enable it with the `ui` feature:
 
 ```shell
-cargo run --features ui
+cargo run --bin spacerace-server --features ui
 ```
 
 Or run with wayland support:
