@@ -1,9 +1,10 @@
-use crate::player::Player;
-use crate::ship::Ship;
+use crate::components::Player;
+use crate::components::ship::Ship;
 use bevy::prelude::Entity;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use uuid::Uuid;
+use crate::map::{load_map, Map};
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
 pub enum GameStatus {
@@ -12,13 +13,14 @@ pub enum GameStatus {
     Finished,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Clone)]
 pub struct GameState {
     pub game_id: Uuid,
     pub players: Vec<Player>,
 
     pub ships: Vec<Ship>,
-    pub map_name: String,
+    //pub map_name: String,
+    pub map: Map,
     pub state: GameStatus,
 }
 
@@ -28,7 +30,7 @@ impl From<PendingGame> for GameState {
             game_id: pending_game.game_id,
             players: pending_game.players,
             ships: vec![],
-            map_name: pending_game.map_name,
+            map: load_map(pending_game.map_name.as_str()).unwrap(),
             state: GameStatus::Queued,
         }
     }

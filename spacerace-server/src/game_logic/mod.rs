@@ -1,7 +1,7 @@
 use crate::app_state::AppState;
 use crate::components::ship::ControllableShip;
 use crate::game_state::{GameState, GameStatus};
-use crate::ship::Ship;
+use crate::components::ship::Ship;
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 

@@ -1,26 +1,33 @@
 use anyhow::anyhow;
 use bevy::prelude::Vec2;
 use std::collections::HashMap;
+use serde::{Deserialize, Serialize};
 
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Map {
     pub name: String,
+    pub size: Vec2,
     pub gravity: f32,
-    pub obstacles: Vec<Obstacle>,
+    pub obstacles: Vec<VectorObject>,
+    // pub start_regions: Vec<VectorObject>,
+    // pub stop_regions: Vec<VectorObject>,
 }
 
-pub struct Obstacle {
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct VectorObject {
     pub position: Vec2,
     pub polygon: Vec<Vec2>,
 }
 
-pub fn load_maps() -> HashMap<String, Map> {
+pub fn load_all_maps() -> HashMap<String, Map> {
     let mut maps = HashMap::new();
     maps.insert(
         "default_map".to_string(),
         Map {
             name: "default_map".to_string(),
+            size: Vec2::new(900.0, 640.0),
             gravity: 0.0,
-            obstacles: vec![Obstacle {
+            obstacles: vec![VectorObject {
                 position: Vec2 { x: 0.0, y: 0.0 },
                 polygon: vec![
                     Vec2::new(-150.0, 100.0),
@@ -38,6 +45,12 @@ pub fn load_maps() -> HashMap<String, Map> {
     maps.insert(map.name.clone(), map);
 
     maps
+}
+
+pub fn load_map(filename: &str) -> Option<Map> {
+    // TODO only load all map data once, or make it lazy load
+    let maps = load_all_maps();
+    maps.get(filename).map(|m| m.clone())
 }
 
 fn load_tiled_map(filename: &str) -> anyhow::Result<Map> {
@@ -60,13 +73,16 @@ fn load_tiled_map(filename: &str) -> anyhow::Result<Map> {
         )
         .unwrap_or_else(|| "tiled".to_string());
 
+    let map_width = raw_map.width * raw_map.tile_width;
+    let map_height = raw_map.tile_height * raw_map.tile_height;
+
     // Load gravity from properties (default to 0.0 if not found)
     let gravity = raw_map
         .properties
         .get("gravity")
         .and_then(|prop| match prop {
             tiled::PropertyValue::FloatValue(f) => Some(f.clone()),
-            _ => panic!("Unexpected map layer type"),
+            _ => None,
         })
         .unwrap_or(0.0f32);
 
@@ -74,6 +90,7 @@ fn load_tiled_map(filename: &str) -> anyhow::Result<Map> {
 
     let mut map = Map {
         name: map_name,
+        size: Vec2::new(map_width as f32, map_height as f32),
         gravity,
         obstacles: vec![],
     };
@@ -94,7 +111,7 @@ fn load_tiled_map(filename: &str) -> anyhow::Result<Map> {
                 y: -first.1,
             });
 
-            map.obstacles.push(Obstacle {
+            map.obstacles.push(VectorObject {
                 position: Vec2 {
                     x: object.x,
                     y: -object.y,

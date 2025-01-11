@@ -1,6 +1,9 @@
 use bevy::prelude::Component;
 
 pub mod ship;
+pub mod player;
+
+pub use player::{Player, PlayerRegistration};
 
 #[derive(Component)]
 pub struct Position {

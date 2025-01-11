@@ -1,6 +1,6 @@
 use crate::app_state::AppState;
 use crate::game_state::{GameState, GameStatus};
-use crate::ship::Ship;
+use crate::components::ship::Ship;
 use axum::extract::{Query, State};
 use axum::Json;
 use serde::{Deserialize, Serialize};
@@ -26,7 +26,7 @@ impl From<&GameState> for PublicGameState {
         PublicGameState {
             game_id: game.game_id,
             ships: game.ships.clone(),
-            map_name: game.map_name.clone(),
+            map_name: game.map.name.clone(),
             state: game.state.clone(),
         }
     }
