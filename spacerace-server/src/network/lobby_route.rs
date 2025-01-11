@@ -1,8 +1,8 @@
 use crate::app_state::AppState;
 use crate::game_state::PendingGame;
 use crate::game_state::{GameState, GameStatus};
-use crate::player::{Player, PlayerRegistration};
-use crate::ship::Ship;
+use crate::components::{Player, PlayerRegistration};
+use crate::components::ship::Ship;
 use axum::extract::State;
 use axum::Json;
 use serde::{Deserialize, Serialize};

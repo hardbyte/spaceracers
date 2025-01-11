@@ -1,13 +1,11 @@
 mod app_state;
 mod game_state;
-mod player;
 
 mod components;
 mod game_logic;
 mod map;
 mod network;
 mod physics;
-mod ship;
 mod telemetry;
 mod tests;
 
@@ -16,6 +14,7 @@ mod control;
 mod graphics_plugin;
 mod lobby_graphics_plugin;
 
+use std::collections::HashMap;
 use crate::components::{Name, Person};
 use app_state::AppState;
 use axum::extract::State;
@@ -91,11 +90,7 @@ pub fn setup_scene(
     if let Some(active_game) = app_state.active_game.lock().unwrap().as_ref() {
         info!(game_id=?active_game.game_id, "Setting up scene for game");
 
-        let maps = map::load_maps();
-        // Select the map by name from the active GameState
-        let map = maps
-            .get(&active_game.map_name)
-            .expect("Failed to load map by name");
+        let map = &active_game.map;
 
         // Set up gravity using the map specific value
         rapier_config.single_mut().gravity = Vec2::Y * map.gravity;

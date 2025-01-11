@@ -1,7 +1,7 @@
 use crate::control::ShipInput;
 use crate::game_state::GameState;
 use crate::game_state::PendingGame;
-use crate::player::Player;
+use crate::components::Player;
 use bevy::prelude::Resource;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
