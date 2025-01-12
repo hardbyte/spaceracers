@@ -82,7 +82,7 @@ fn load_tiled_map(filename: &str) -> anyhow::Result<Map> {
         .unwrap_or_else(|| "tiled".to_string());
 
     let map_width = raw_map.width * raw_map.tile_width;
-    let map_height = raw_map.tile_height * raw_map.tile_height;
+    let map_height = raw_map.height * raw_map.tile_height;
 
     // Load gravity from properties (default to 0.0 if not found)
     let gravity = raw_map
@@ -121,8 +121,8 @@ fn load_tiled_map(filename: &str) -> anyhow::Result<Map> {
 
             let map_object = VectorObject {
                 position: Vec2 {
-                    x: object.x,
-                    y: -object.y,
+                    x: object.x - (map_width as f32/ 2.0),
+                    y: -(object.y) + (map_height as f32 / 2.0),
                 },
                 polygon,
             };
