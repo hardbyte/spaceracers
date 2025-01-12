@@ -24,7 +24,7 @@ cargo run --bin spacerace-server --features ui
 Or run with wayland support:
 
 ```shell
-RUST_LOG=warn,spaceracers=debug cargo run --features ui,wayland
+RUST_LOG=warn,spaceracer_server=debug cargo run --features ui,wayland
 ```
 
 ## HTTP Interface

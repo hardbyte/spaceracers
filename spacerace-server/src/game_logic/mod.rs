@@ -1,9 +1,25 @@
 use crate::app_state::AppState;
 use crate::components::ship::ControllableShip;
-use crate::game_state::{GameState, GameStatus};
 use crate::components::ship::Ship;
+use crate::game_state::{GameState, GameStatus};
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
+use std::time::Duration;
+
+pub struct GameLogicPlugin;
+
+impl Plugin for GameLogicPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(
+            PostUpdate,
+            transition_to_inactive_system.run_if(has_timer_and_game_finished),
+        )
+        .add_systems(
+            OnExit(ServerState::Active),
+            (cleanup_finished_game, cleanup_transition_timer),
+        );
+    }
+}
 
 // Enum that will be used as a global state for the game server
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
@@ -13,45 +29,25 @@ pub enum ServerState {
     Active,
 }
 
-#[derive(Debug, Event)]
-pub enum GameEvent {
-    GameStarted { game_id: uuid::Uuid },
-    GameFinished { game_id: uuid::Uuid },
-}
+// System to check if all players finished the race
+pub fn check_all_players_finished_system(app_state: Res<AppState>, mut commands: Commands) {
+    let mut active_game_lock = app_state.active_game.lock().unwrap();
+    if let Some(active_game) = active_game_lock.as_mut() {
+        if active_game.state == GameStatus::Running
+            && active_game.players.len() == active_game.finish_times.len()
+        {
+            info!("All players have finished the race! Transitioning game state to Finished.");
+            active_game.state = GameStatus::Finished;
 
-// This system will run during the Active state
-#[tracing::instrument(skip_all)]
-pub fn game_system(
-    mut current_server_state: ResMut<State<ServerState>>,
-    mut next_server_state: ResMut<NextState<ServerState>>,
-    app_state: Res<AppState>,
-) {
-    tracing::trace!("In game system running");
-
-    // TODO we may not need this at all...
-    // perhaps need to call periodically and check if the game is over
-
-    // If the game is over we can either transition to Inactive or directly start a new game from the lobby
-    //
-    // let lobby = app_state.lobby.lock().unwrap();
-    // if current_server_state.get() == &ServerState::Active && !lobby.is_empty() {
-    //     tracing::info!("Transitioning directly to Active state");
-    //     // Transition to Active
-    //     next_server_state.set(ServerState::Active);
-    // } else if current_server_state.get() == &ServerState::Active {
-    //     tracing::info!("Transitioning to Inactive state");
-    //     // Transition to Inactive
-    //     next_server_state.set(ServerState::Inactive);
-    // } else {
-    //     // Remain in Inactive state
-    //     next_server_state.set(ServerState::Inactive);
-    // }
+            // Transition to Inactive after a delay
+            setup_transition_timer(commands);
+        }
+    }
 }
 
 #[derive(Resource)]
 pub struct GameSchedulerConfig {
     pub timer: Timer,
-    //pub game_start_delay: Duration,
 }
 
 pub fn setup_game_scheduler(mut commands: Commands) {
@@ -67,7 +63,6 @@ pub fn game_scheduler_system(
     time: Res<Time>,
     mut next_server_state: ResMut<NextState<ServerState>>,
     mut config: ResMut<GameSchedulerConfig>,
-    //mut writer: EventWriter<GameEvent>
 ) {
     // tick the timer
     config.timer.tick(time.delta());
@@ -94,27 +89,66 @@ pub fn game_scheduler_system(
                 // Update the active game
                 *active_game = Some(game_state.clone());
 
-                // https://github.com/bevyengine/bevy/blob/latest/examples/ecs/event.rs
-                // tracing::debug!("Sending a GameStarted event");
-                // writer.send(GameEvent::GameStarted {
-                //     game_id: game_state.game_id,
-                // });
-
                 tracing::info!("Transitioning Server State to Active");
+
                 // Transition to Active
                 next_server_state.set(ServerState::Active);
             }
+        } else {
+            tracing::debug!("Active game already exists");
         }
     }
 }
 
-fn get_starting_positions(num_players: usize) -> Vec<Vec2> {
-    // Return a list of starting positions based on the number of players and the current map
-    // For simplicity, we'll hardcode some positions
-    vec![
-        Vec2::new(-200.0, 150.0),
-        Vec2::new(-200.0, 100.0),
-        Vec2::new(-200.0, 50.0),
-        Vec2::new(-200.0, 0.0),
-    ]
+#[derive(Resource)]
+struct TransitionTimer(Timer);
+
+fn setup_transition_timer(mut commands: Commands) {
+    // Add a 10-second timer
+    commands.insert_resource(TransitionTimer(Timer::new(
+        Duration::from_secs(10),
+        TimerMode::Once,
+    )));
+}
+
+fn transition_to_inactive_system(
+    mut timer: ResMut<TransitionTimer>,
+    mut state: ResMut<NextState<ServerState>>,
+    time: Res<Time>,
+) {
+    // Update the timer and transition to Inactive if completed
+    if timer.0.tick(time.delta()).finished() {
+        info!("Transitioning Server State to Inactive");
+        state.set(ServerState::Inactive);
+    }
+}
+
+// Runs if the `TransitionTimer` exists and the game is finished
+fn has_timer_and_game_finished(
+    app_state: Res<AppState>,
+    timer: Option<Res<TransitionTimer>>,
+) -> bool {
+    timer.is_some()
+        && app_state
+            .active_game
+            .lock()
+            .unwrap()
+            .as_ref()
+            .map_or(false, |game| matches!(game.state, GameStatus::Finished))
+}
+
+pub fn cleanup_finished_game(app_state: Res<AppState>, mut commands: Commands) {
+    // Remove the active game
+    let mut active_game = app_state.active_game.lock().unwrap();
+
+    if let Some(game) = active_game.as_ref() {
+        info!(game.id=?game.game_id, "Cleaning up finished game");
+        active_game.take();
+    } else {
+        info!("No active game to clean up");
+    }
+}
+
+pub fn cleanup_transition_timer(mut commands: Commands) {
+    commands.remove_resource::<TransitionTimer>();
 }

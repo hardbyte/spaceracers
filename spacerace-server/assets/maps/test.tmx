@@ -8,13 +8,17 @@
   <property name="name" value="tiled"/>
  </properties>
  <objectgroup id="2" name="Object Layer 1">
-  <object id="1" x="3.50472" y="-2.33648">
-   <polygon points="0,0 254.676,1.16824 339.373,217.876 311.336,297.317 115.071,390.192 -0.584119,378.509"/>
+  <object id="1" x="44.1525" y="117.298">
+   <polygon points="0,0 220.352,0.962474 293.634,179.501 269.376,244.949 99.5624,321.466 -0.505395,311.841"/>
   </object>
   <object id="2" x="518.698" y="60.7484">
    <polygon points="0,0 71.2625,228.975 -102.805,371.5 -39.136,505.847 215.54,543.815 297.317,401.29 248.835,223.718 211.451,-64.2531 -84.1132,-61.9166"/>
   </object>
-  <object id="3" name="start" type="start" x="111.998" y="470.9" width="167.997" height="96.7254"/>
-  <object id="5" name="finish" type="end" x="804.348" y="68.726" width="124.725" height="40.7265"/>
+  <object id="3" name="start" type="start" x="5.09093" y="2.54523" width="167.997" height="96.7254">
+   <polygon points="0,0 167.997,0 167.997,96.7254 0,96.7254"/>
+  </object>
+  <object id="5" name="finish" type="finish" x="371.629" y="234.177" width="157.815" height="55.9989">
+   <polygon points="0,0 157.815,0 157.815,55.9989 0,55.9989"/>
+  </object>
  </objectgroup>
 </map>
