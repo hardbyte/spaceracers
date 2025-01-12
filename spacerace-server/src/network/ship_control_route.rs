@@ -1,7 +1,7 @@
 use crate::app_state::AppState;
+use crate::components::ship::Ship;
 use crate::control::ShipInput;
 use crate::game_state::{GameState, GameStatus};
-use crate::components::ship::Ship;
 use axum::extract::State;
 use axum::Json;
 use serde::{Deserialize, Serialize};

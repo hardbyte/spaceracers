@@ -1,6 +1,6 @@
 use crate::app_state::AppState;
-use crate::game_state::{GameState, GameStatus};
 use crate::components::ship::Ship;
+use crate::game_state::{GameState, GameStatus};
 use axum::extract::{Query, State};
 use axum::Json;
 use serde::{Deserialize, Serialize};
@@ -47,7 +47,7 @@ pub async fn state_handler(
     let active_game = match guard.as_ref() {
         Some(game) => game,
         None => {
-            tracing::warn!("state requested but no game running");
+            tracing::debug!("state requested but no game running");
             return Json(StateResponse::Inactive);
         }
     };
@@ -60,10 +60,10 @@ pub async fn state_handler(
 
     if query_game_id == active_game.game_id.to_string() {
         let public_game_state = PublicGameState::from(active_game);
-        tracing::info!(state = ?public_game_state, "Returning game state");
+        tracing::debug!(state = ?public_game_state, "Returning game state");
         Json(StateResponse::Active(public_game_state))
     } else {
-        tracing::info!("Game state requested for inactive game");
+        tracing::debug!("Game state requested for inactive game");
         Json(StateResponse::Inactive)
     }
 }

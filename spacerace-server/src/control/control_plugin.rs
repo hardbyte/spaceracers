@@ -1,7 +1,7 @@
 use crate::app_state::AppState;
 use crate::components::ship::ControllableShip;
-use crate::game_logic::ServerState;
 use crate::components::ship::Ship;
+use crate::game_logic::ServerState;
 use crate::{components, game_logic, setup_scene};
 use bevy::prelude::*;
 use bevy_rapier2d::dynamics::{ExternalImpulse, Velocity};

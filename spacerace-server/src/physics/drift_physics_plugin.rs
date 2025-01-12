@@ -3,11 +3,13 @@ use crate::components;
 use bevy::app::{App, Plugin, PostUpdate, Startup, Update};
 use bevy::input::ButtonInput;
 use bevy::math::{Vec2, Vec3};
+use bevy::prelude::*;
 use bevy::prelude::{Commands, EventReader, KeyCode, Query, Res, Transform};
-use bevy_rapier2d::dynamics::ExternalImpulse;
+use bevy_rapier2d::dynamics::{ExternalImpulse, RigidBody};
 use bevy_rapier2d::pipeline::CollisionEvent::Started;
 use bevy_rapier2d::pipeline::{CollisionEvent, ContactForceEvent};
 use bevy_rapier2d::plugin::{NoUserData, RapierPhysicsPlugin};
+use bevy_rapier2d::rapier::prelude::Collider;
 use tracing::{debug, info};
 
 // TODO make these based on the map size
@@ -15,26 +17,48 @@ const BOUNDS: Vec2 = Vec2::new(900.0, 640.0);
 
 pub fn setup_physics(mut commands: Commands) {}
 
-pub fn display_events_system(
+pub fn handle_collision_events(
     mut collision_events: EventReader<CollisionEvent>,
-    mut contact_force_events: EventReader<ContactForceEvent>,
+    finish_query: Query<&components::FinishRegion>,
+    ship_query: Query<&components::ship::ControllableShip>,
+    mut commands: Commands,
+    app_state: Res<AppState>,
+    time: Res<Time>,
 ) {
     for collision_event in collision_events.read() {
-        // We are particularly interested in a CollisionEvent
-        // between a ship and the finish line - that will trigger the game to end
-        // TODO how to get the 2 entities involved?
-        debug!("Received collision event: {collision_event:?}");
-        if let Started(entity1, entity2, s) = collision_event {
-            info!(
-                ?s,
-                "Collision between entities: {entity1:?} and {entity2:?}"
-            );
+        if let CollisionEvent::Started(entity1, entity2, _) = collision_event {
+            let finish_entity = if finish_query.get(*entity1).is_ok() {
+                *entity1
+            } else if finish_query.get(*entity2).is_ok() {
+                *entity2
+            } else {
+                continue;
+            };
+
+            let player_entity = if finish_entity == *entity1 {
+                *entity2
+            } else {
+                *entity1
+            };
+
+            if let Ok(player) = ship_query.get(player_entity) {
+                info!("Player {:?} has finished the race!", player.id);
+
+                // Record the finish time
+                let mut active_game_lock = app_state.active_game.lock().unwrap();
+                if let Some(active_game) = active_game_lock.as_mut() {
+                    let current_time = time.elapsed_secs();
+                    active_game
+                        .finish_times
+                        .entry(player.id)
+                        .or_insert(current_time);
+                }
+
+                // Despawn the ship as it has finished the race
+                commands.entity(player_entity).despawn();
+            }
         }
     }
-
-    // for contact_force_event in contact_force_events.read() {
-    //     println!("Received contact force event: {contact_force_event:?}");
-    // }
 }
 
 pub struct DriftPhysicsPlugin;
@@ -51,7 +75,7 @@ impl Plugin for DriftPhysicsPlugin {
         }
 
         app.add_systems(Update, apply_bounds_system);
-        app.add_systems(PostUpdate, display_events_system);
+        app.add_systems(PostUpdate, handle_collision_events);
     }
 }
 

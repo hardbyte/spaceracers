@@ -14,7 +14,6 @@ mod control;
 mod graphics_plugin;
 mod lobby_graphics_plugin;
 
-use std::collections::HashMap;
 use crate::components::{Name, Person};
 use app_state::AppState;
 use axum::extract::State;
@@ -27,8 +26,10 @@ use bevy_rapier2d::prelude::*;
 use bevy_rapier2d::rapier::prelude::CollisionEventFlags;
 use bevy_tokio_tasks::{TokioTasksPlugin, TokioTasksRuntime};
 use opentelemetry::global;
+use rand::prelude::SliceRandom;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::net::SocketAddr;
 use tracing::info;
 use uuid::Uuid;
@@ -36,7 +37,26 @@ use uuid::Uuid;
 #[cfg(feature = "ui")]
 use graphics_plugin::GraphicsPlugin;
 
-use crate::game_logic::{GameEvent, ServerState};
+use crate::game_logic::ServerState;
+
+pub fn start_game(mut commands: Commands, app_state: Res<AppState>) {
+    let mut active_game_guard = app_state.active_game.lock().unwrap();
+    if let Some(active_game) = active_game_guard.as_mut() {
+        active_game.state = game_state::GameStatus::Running;
+    } else {
+        info!("No active game to start");
+    }
+}
+
+pub fn unload_game_entities(
+    mut commands: Commands,
+    query: Query<Entity, With<components::ActiveGameEntity>>,
+) {
+    // Despawn all entities from the game
+    for entity in query.iter() {
+        commands.entity(entity).despawn_recursive();
+    }
+}
 
 pub fn spawn_ships(mut commands: Commands, app_state: Res<AppState>) {
     // Spawn a Ship for each player in the active GameState
@@ -50,7 +70,11 @@ pub fn spawn_ships(mut commands: Commands, app_state: Res<AppState>) {
             let hue = rng.gen_range(0.0..360.0);
             let color = Color::hsl(hue, 0.8, 0.5);
 
+            // Pick a random position for the ship from the map's start zones
+            let start_region = active_game.map.start_regions.choose(&mut rng).unwrap();
+
             commands.spawn((
+                components::ActiveGameEntity,
                 components::ship::ControllableShip {
                     id: player.id,
                     impulse: 8_000.0,
@@ -58,10 +82,12 @@ pub fn spawn_ships(mut commands: Commands, app_state: Res<AppState>) {
                 },
                 Sprite {
                     color,
+
                     custom_size: Some(Vec2::new(sprite_size, sprite_size)),
                     ..Default::default()
                 },
-                Transform::from_xyz(-200.0, 150.0, 0.0),
+                // TODO sample position within the region's polygon
+                Transform::from_xyz(start_region.position.x, start_region.position.y, 0.0),
                 RigidBody::Dynamic,
                 Damping {
                     linear_damping: 0.2,
@@ -98,21 +124,27 @@ pub fn setup_scene(
         // Obstacles
         for obstacle in &map.obstacles {
             commands.spawn((
+                components::ActiveGameEntity,
                 Transform::from_xyz(obstacle.position.x, obstacle.position.y, 0.0),
                 Collider::polyline(obstacle.polygon.clone(), None),
+            ));
+        }
+
+        // Finish zone colliders
+        for finish in &map.finish_regions {
+            commands.spawn((
+                components::ActiveGameEntity,
+                Transform::from_xyz(finish.position.x, finish.position.y, 0.0),
+                // Note we only handle Tiled polygons, ideally handle rectangle objects etc
+                Collider::polyline(finish.polygon.clone(), None),
+                Sensor,
+                crate::components::FinishRegion,
             ));
         }
     } else {
         info!("No active game to set up scene for");
         return;
     }
-
-    // Finish line sensor - TODO load from map data
-    commands.spawn((
-        Transform::from_xyz(0.0, 100.0, 0.0),
-        Collider::cuboid(80.0, 30.0),
-        Sensor,
-    ));
 }
 
 fn main() {
@@ -130,7 +162,6 @@ fn main() {
         .add_plugins(physics::DriftPhysicsPlugin)
         .add_plugins(network::NetworkPlugin)
         .add_plugins(control::ControlPlugin);
-    //.add_event::<GameEvent>();
 
     #[cfg(feature = "ui")]
     {
@@ -150,19 +181,20 @@ fn main() {
         app.add_plugins(StatesPlugin);
     }
 
-    app.init_state::<ServerState>()
+    app.add_plugins(game_logic::GameLogicPlugin)
+        .init_state::<ServerState>()
         .add_systems(
             Update,
-            game_logic::game_system.run_if(in_state(ServerState::Active)),
+            game_logic::check_all_players_finished_system.run_if(in_state(ServerState::Active)),
         )
-        // See example for states:
-        // https://github.com/bevyengine/bevy/blob/latest/examples/games/game_menu.rs
-        //.add_systems(OnEnter(ServerState::Active), game_logic::setup_game_state)
-        .add_systems(OnEnter(ServerState::Active), setup_scene)
-        .add_systems(OnEnter(ServerState::Active), spawn_ships)
+        .add_systems(
+            OnEnter(ServerState::Active),
+            (setup_scene, spawn_ships, start_game),
+        )
+        .add_systems(OnExit(ServerState::Active), (unload_game_entities))
         .add_systems(
             OnEnter(ServerState::Inactive),
-            game_logic::setup_game_scheduler,
+            (game_logic::setup_game_scheduler),
         )
         .add_systems(
             Update,
