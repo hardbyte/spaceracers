@@ -72,7 +72,7 @@ fn setup_leaderboard_ui(mut commands: Commands) {
                 ..default()
             },
             // Semi-transparent background color.
-            BackgroundColor(Color::rgba(0.0, 0.0, 0.0, 0.3)),
+            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.3)),
             LeaderboardUIRoot,
         ))
         .with_children(|parent| {

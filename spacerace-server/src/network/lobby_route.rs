@@ -37,7 +37,11 @@ pub async fn lobby_handler(
 
     // If no pending game exists or if they are all full, create a new one
     if pending_games.len() == 0 || pending_games.iter().all(|g| g.players.len() >= MAX_PLAYERS) {
-        pending_games.push(PendingGame::new());
+        // TODO change the map name to be random
+        pending_games.push(PendingGame::new("Starmap".to_string()));
+
+        info!("Creating a new pending game");
+
     }
 
     let pending_game = pending_games

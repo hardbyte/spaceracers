@@ -6,6 +6,7 @@ use std::collections::HashMap;
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Map {
     pub name: String,
+    pub skin_path: Option<String>,
     pub size: Vec2,
     pub gravity: f32,
     pub obstacles: Vec<VectorObject>,
@@ -25,6 +26,7 @@ pub fn load_all_maps() -> HashMap<String, Map> {
         "default_map".to_string(),
         Map {
             name: "default_map".to_string(),
+            skin_path: None,
             size: Vec2::new(900.0, 640.0),
             gravity: 0.0,
             obstacles: vec![VectorObject {
@@ -50,6 +52,9 @@ pub fn load_all_maps() -> HashMap<String, Map> {
 
     // TODO load all maps from tmx files in the maps directory
     // Use asset server
+    let map = load_tiled_map("spacerace-server/assets/maps/testmap.tmx").expect("Failed to load map");
+    maps.insert(map.name.clone(), map);
+
     let map = load_tiled_map("spacerace-server/assets/maps/test.tmx").expect("Failed to load map");
     maps.insert(map.name.clone(), map);
 
@@ -59,11 +64,13 @@ pub fn load_all_maps() -> HashMap<String, Map> {
 pub fn load_map(filename: &str) -> Option<Map> {
     // TODO only load all map data once, or make it lazy load
     let maps = load_all_maps();
+
     maps.get(filename).map(|m| m.clone())
 }
 
 fn load_tiled_map(filename: &str) -> anyhow::Result<Map> {
     let mut loader = tiled::Loader::new();
+    tracing::info!("Loading map: {}", filename);
     let raw_map = loader.load_tmx_map(filename)?;
 
     let layer = raw_map
@@ -81,6 +88,15 @@ fn load_tiled_map(filename: &str) -> anyhow::Result<Map> {
         })
         .unwrap_or_else(|| "tiled".to_string());
 
+    let skin_path: Option<String> = raw_map
+        .properties
+        .get("skin")
+        .and_then(|prop| match prop {
+            tiled::PropertyValue::StringValue(prop) => Some(prop.clone()),
+            _ => None,
+        });
+    tracing::info!("Map skin path: {:?}", skin_path);
+
     let map_width = raw_map.width * raw_map.tile_width;
     let map_height = raw_map.height * raw_map.tile_height;
 
@@ -96,6 +112,7 @@ fn load_tiled_map(filename: &str) -> anyhow::Result<Map> {
 
     let mut map = Map {
         name: map_name,
+        skin_path,
         size: Vec2::new(map_width as f32, map_height as f32),
         gravity,
         obstacles: vec![],
@@ -129,7 +146,7 @@ fn load_tiled_map(filename: &str) -> anyhow::Result<Map> {
 
             match object.user_type.as_str() {
                 "finish" => {
-                    tracing::info!("Found finish region");
+                    tracing::debug!("Found finish region");
                     map.finish_regions.push(map_object);
                 }
                 "start" => {
