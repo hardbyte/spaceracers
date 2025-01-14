@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.8" tiledversion="1.8.2" orientation="orthogonal" renderorder="right-down" width="22" height="16" tilewidth="32" tileheight="32" infinite="0" nextlayerid="6" nextobjectid="20">
+ <properties>
+  <property name="gravity" value="12"/>
+  <property name="name" value="Starmap"/>
+  <property name="skin" value="testmap_skin.png"/>
+ </properties>
+ <objectgroup id="2" name="Object Layer 1" opacity="0.9">
+  <object id="5" name="finish" type="finish" x="617.471" y="74.7549" width="37.815" height="38.9989">
+   <polygon points="0,0 37.815,0 37.815,38.9989 0,38.9989"/>
+  </object>
+  <object id="3" name="start" type="start" x="34.6921" y="414.41" width="43.997" height="46.725">
+   <polygon points="0,0 43.997,0 43.997,46.725 0,46.725"/>
+  </object>
+  <object id="17" x="75" y="483">
+   <polygon points="0,0 24,-55 60,-94 77,-98 91,-100 108,-96 131,-90 160,-62 179,-52 191,-47 213,-45 248,-45 295,-39 360,-64 431,-74 478,-100 509,-128 531,-162 543,-215 538,-255 533,-294 524,-322 629,-323 628,31 -76,29 -77,-3"/>
+  </object>
+  <object id="18" x="704" y="159">
+   <polygon points="0,0 -111,0 -126,-9 -162,-26 -199,-40 -240,-49 -261,-43 -285,-34 -308,-19 -323,5 -334,26 -352,44 -381,49 -410,49 -439,46 -489,37 -520,27 -547,16 -567,0 -574,-14 -572,-27 -564,-39 -550,-50 -520,-61 -466,-75 -407,-85 -354,-86 -322,-86 -269,-79 -210,-67 -144,-55 -93,-40 -39,-25 -25,-85 -132,-112 -196,-127 -280,-143 -337,-147 -351,-147 -351,-163 2,-164"/>
+  </object>
+  <object id="19" x="354" y="-2">
+   <polygon points="0,0 2,13 -34,13 -61,17 -113,22 -148,29 -190,40 -225,57 -257,76 -277,106 -286,135 -285,164 -273,191 -238,230 -201,246 -159,258 -95,275 -48,277 -18,272 21,263 48,247 70,222 77,199 99,179 124,176 160,186 188,201 199,237 199,266 192,305 170,323 134,340 84,358 20,369 -34,378 -66,374 -94,357 -122,342 -138,329 -174,319 -214,323 -245,336 -273,354 -299,383 -329,430 -339,460 -361,461 -363,-7"/>
+  </object>
+ </objectgroup>
+ <imagelayer id="5" name="Image Layer 1">
+  <image source="testmap_skin.svg" width="699" height="502"/>
+ </imagelayer>
+</map>

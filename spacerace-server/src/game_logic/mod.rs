@@ -122,6 +122,7 @@ pub fn setup_scene(
     mut commands: Commands,
     mut rapier_config: Query<&mut RapierConfiguration>,
     app_state: Res<AppState>,
+    asset_server: Res<AssetServer>,
 ) {
     if let Some(active_game) = app_state.active_game.lock().unwrap().as_ref() {
         info!(game_id=?active_game.game_id, "Setting up scene for game");
@@ -149,6 +150,28 @@ pub fn setup_scene(
                 Collider::polyline(finish.polygon.clone(), None),
                 Sensor,
                 crate::components::FinishRegion,
+            ));
+        }
+
+        // Skin
+        if let Some(skin_path) = &map.skin_path {
+            info!("Spawning background skin from: {}", skin_path);
+
+            // Load the image as a texture
+            let texture_handle = asset_server.load(skin_path);
+
+
+            commands.spawn((
+                Sprite {
+                    image: texture_handle,
+                    custom_size: Some(map.size),
+                    ..Default::default()
+                },
+                // Spawn behind all other entities
+                Transform::from_xyz(0.0, 0.0, -100.0),
+
+                // Tag it so we can despawn later if needed
+                crate::components::ActiveGameEntity,
             ));
         }
     } else {
@@ -210,7 +233,8 @@ pub fn game_scheduler_system(
                 let pending_game = lobby.remove(index);
 
                 // Create a new GameState from the pending game
-                let game_state = GameState::from(pending_game.clone());
+                let game_state = GameState::try_from(pending_game.clone())
+                    .expect("Failed to create GameState from PendingGame");
 
                 tracing::info!(game.id=?game_state.game_id, state=?game_state, "Starting game");
 

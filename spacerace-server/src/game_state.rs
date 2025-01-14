@@ -24,16 +24,21 @@ pub struct GameState {
     pub state: GameStatus,
 }
 
-impl From<PendingGame> for GameState {
-    fn from(pending_game: PendingGame) -> Self {
-        GameState {
+impl TryFrom<PendingGame> for GameState {
+    type Error = ();
+
+    fn try_from(pending_game: PendingGame) -> Result<Self, Self::Error> {
+
+        let map = load_map(pending_game.map_name.as_str()).ok_or(())?;
+
+        Ok(GameState {
             game_id: pending_game.game_id,
             players: pending_game.players,
             ships: vec![],
-            map: load_map(pending_game.map_name.as_str()).unwrap(),
+            map,
             state: GameStatus::Queued,
             finish_times: HashMap::new(),
-        }
+        })
     }
 }
 
@@ -45,11 +50,11 @@ pub struct PendingGame {
 }
 
 impl PendingGame {
-    pub(crate) fn new() -> PendingGame {
+    pub(crate) fn new(map_name: String) -> PendingGame {
         PendingGame {
             game_id: Uuid::new_v4(),
             players: vec![],
-            map_name: "tiled".to_string(),
+            map_name,
         }
     }
 }

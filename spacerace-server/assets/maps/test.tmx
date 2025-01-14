@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.8" tiledversion="1.8.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="0" nextlayerid="4" nextobjectid="3">
- <editorsettings>
-  <export target="test.json" format="json"/>
- </editorsettings>
  <properties>
   <property name="gravity" value="12"/>
   <property name="name" value="tiled"/>
  </properties>
+ <tileset firstgid="1" name="player" tilewidth="32" tileheight="32" tilecount="684" columns="36">
+  <image source="../ferris.png" width="1172" height="615"/>
+ </tileset>
  <objectgroup id="2" name="Object Layer 1">
   <object id="1" x="44.1525" y="117.298">
    <polygon points="0,0 220.352,0.962474 293.634,179.501 269.376,244.949 99.5624,321.466 -0.505395,311.841"/>
