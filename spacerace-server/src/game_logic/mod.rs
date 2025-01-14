@@ -1,23 +1,20 @@
+mod leaderboard;
+mod server_state;
+
 use crate::app_state::AppState;
 use crate::components::ship::ControllableShip;
 use crate::components::ship::Ship;
+use crate::game_logic::leaderboard::LeaderBoardPlugin;
 use crate::game_state::{GameState, GameStatus};
 use crate::{components, game_state};
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 use rand::prelude::SliceRandom;
 use rand::Rng;
+pub use server_state::ServerState;
 use std::time::Duration;
 
 pub struct GameLogicPlugin;
-
-// Enum that will be used as a global state for the game server
-#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
-pub enum ServerState {
-    #[default]
-    Inactive,
-    Active,
-}
 
 impl Plugin for GameLogicPlugin {
     fn build(&self, app: &mut App) {
@@ -43,7 +40,8 @@ impl Plugin for GameLogicPlugin {
             .add_systems(
                 OnExit(ServerState::Active),
                 (cleanup_finished_game, cleanup_transition_timer),
-            );
+            )
+            .add_plugins(LeaderBoardPlugin);
     }
 }
 
@@ -69,7 +67,7 @@ pub fn unload_game_entities(
 pub fn spawn_ships(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    app_state: Res<AppState>
+    app_state: Res<AppState>,
 ) {
     // Spawn a Ship for each player in the active GameState
     let sprite_size = 25.0;
@@ -267,7 +265,7 @@ fn has_timer_and_game_finished(
             .map_or(false, |game| matches!(game.state, GameStatus::Finished))
 }
 
-pub fn cleanup_finished_game(app_state: Res<AppState>, mut commands: Commands) {
+pub fn cleanup_finished_game(app_state: Res<AppState>) {
     // Remove the active game
     let mut active_game = app_state.active_game.lock().unwrap();
 

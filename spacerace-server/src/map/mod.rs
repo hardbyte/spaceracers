@@ -121,7 +121,7 @@ fn load_tiled_map(filename: &str) -> anyhow::Result<Map> {
 
             let map_object = VectorObject {
                 position: Vec2 {
-                    x: object.x - (map_width as f32/ 2.0),
+                    x: object.x - (map_width as f32 / 2.0),
                     y: -(object.y) + (map_height as f32 / 2.0),
                 },
                 polygon,

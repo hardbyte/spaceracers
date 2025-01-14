@@ -1,12 +1,11 @@
 use crate::app_state::AppState;
-use crate::components::ship::Ship;
+
 use crate::control::ShipInput;
-use crate::game_state::{GameState, GameStatus};
+
 use axum::extract::State;
 use axum::Json;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
-use uuid::Uuid;
 
 #[derive(Deserialize)]
 pub struct ControlInput {

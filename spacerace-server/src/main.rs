@@ -14,14 +14,10 @@ mod control;
 mod graphics_plugin;
 mod lobby_graphics_plugin;
 
-use crate::components::{Name, Person};
 use app_state::AppState;
-use axum::extract::State;
-use axum::Json;
-use bevy::color::palettes::tailwind::BLUE_400;
+
 use bevy::prelude::*;
-use bevy::state::app::StatesPlugin;
-use bevy_rapier2d::prelude::CollisionEvent::Started;
+
 use bevy_rapier2d::prelude::*;
 use bevy_rapier2d::rapier::prelude::CollisionEventFlags;
 use bevy_tokio_tasks::{TokioTasksPlugin, TokioTasksRuntime};
@@ -37,7 +33,7 @@ use uuid::Uuid;
 #[cfg(feature = "ui")]
 use graphics_plugin::GraphicsPlugin;
 
-use crate::game_logic::ServerState;
+use game_logic::ServerState;
 
 fn main() {
     telemetry::init();
