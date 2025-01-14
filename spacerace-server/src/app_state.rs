@@ -5,7 +5,7 @@ use crate::game_state::PendingGame;
 use bevy::prelude::Resource;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use tokio::sync::mpsc;
+
 use uuid::Uuid;
 
 // Application state will be shared between tokio and bevy so needs to be thread-safe

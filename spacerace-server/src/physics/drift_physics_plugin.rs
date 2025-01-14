@@ -10,7 +10,7 @@ use bevy_rapier2d::pipeline::CollisionEvent::Started;
 use bevy_rapier2d::pipeline::{CollisionEvent, ContactForceEvent};
 use bevy_rapier2d::plugin::{NoUserData, RapierPhysicsPlugin};
 use bevy_rapier2d::rapier::prelude::Collider;
-use tracing::{debug, info};
+use tracing::info;
 
 // TODO make these based on the map size
 const BOUNDS: Vec2 = Vec2::new(900.0, 640.0);

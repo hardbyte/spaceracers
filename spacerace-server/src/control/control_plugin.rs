@@ -1,8 +1,8 @@
 use crate::app_state::AppState;
+use crate::components;
 use crate::components::ship::ControllableShip;
 use crate::components::ship::Ship;
 use crate::game_logic::ServerState;
-use crate::{components, game_logic};
 use bevy::prelude::*;
 use bevy_rapier2d::dynamics::{ExternalImpulse, Velocity};
 
@@ -10,7 +10,6 @@ pub struct ControlPlugin;
 
 impl Plugin for ControlPlugin {
     fn build(&self, app: &mut App) {
-
         app.add_systems(OnExit(ServerState::Active), cleanup_controls);
         app.add_systems(
             Update,
@@ -22,7 +21,6 @@ impl Plugin for ControlPlugin {
         );
     }
 }
-
 
 fn cleanup_controls(app_state: Res<AppState>) {
     // Remove all control inputs in `AppState.control_inputs` for all players

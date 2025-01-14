@@ -2,16 +2,13 @@ use crate::app_state::AppState;
 use crate::components::ship::Ship;
 use crate::components::{Player, PlayerRegistration};
 use crate::game_state::PendingGame;
-use crate::game_state::{GameState, GameStatus};
+
 use axum::extract::State;
 use axum::Json;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::future::pending;
-use std::ops::Deref;
+
 use std::time::Duration;
 use tracing::info;
-use uuid::Uuid;
 
 const MIN_PLAYERS: usize = 1; // Minimum players to start a game
 const MAX_PLAYERS: usize = 5; // Maximum players for a game

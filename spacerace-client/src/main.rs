@@ -1,12 +1,12 @@
 use crossterm::event::{self, Event, KeyCode};
-use crossterm::{cursor, execute, terminal, queue, };
+use crossterm::{cursor, execute, queue, terminal};
 use rand::distributions::DistString;
 use rand::Rng;
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::io::{stdout, Write};
 use std::time::Duration;
-use reqwest::Client;
 use tokio::time::sleep;
 use tracing::{debug, error, info};
 use tracing_subscriber;
@@ -51,7 +51,6 @@ enum GameStatus {
     Running,
     Finished,
 }
-
 
 /// Details of the currently active game state.
 #[derive(Debug, Deserialize)]
@@ -112,10 +111,11 @@ async fn main() -> anyhow::Result<()> {
     let player_password = env::var("PLAYER_PASSWORD").unwrap_or_else(|_| {
         rand::distributions::Alphanumeric.sample_string(&mut rand::thread_rng(), 16)
     });
-    let player_team = env::var("PLAYER_TEAM").unwrap_or_else(|_|player_name.clone()); // Default to use player's name as team name.
+    let player_team = env::var("PLAYER_TEAM").unwrap_or_else(|_| player_name.clone()); // Default to use player's name as team name.
 
     let client = reqwest::Client::new();
-    let lobby_response = register_player(&client, &host, player_name, player_team, &player_password).await?;
+    let lobby_response =
+        register_player(&client, &host, player_name, player_team, &player_password).await?;
 
     info!("Registered with lobby: {:?}", lobby_response);
 
@@ -123,8 +123,6 @@ async fn main() -> anyhow::Result<()> {
     crossterm::terminal::enable_raw_mode()?;
     let mut stdout = stdout();
     execute!(stdout, cursor::Hide)?;
-
-
 
     loop {
         // Initial instructions
@@ -146,13 +144,12 @@ async fn main() -> anyhow::Result<()> {
                 // Check if the active game is the one we have joined
                 if active.game_id == lobby_response.game_id {
                     // Great, *our* game is active.
-                    println!("Our game ({}) is now active. Starting game loop...", active.game_id);
+                    println!(
+                        "Our game ({}) is now active. Starting game loop...",
+                        active.game_id
+                    );
 
-                    run_game_loop(
-                        client.clone(),
-                        player_password.clone(),
-                        host.clone(),
-                    ).await?;
+                    run_game_loop(client.clone(), player_password.clone(), host.clone()).await?;
 
                     // If `run_game_loop` returns, that means the game ended or the user quit.
                     // Break out of the outer loop to exit, or re-register for another game, etc.
@@ -162,12 +159,10 @@ async fn main() -> anyhow::Result<()> {
                     // Another game is active, but not ours. We keep waiting, hopefully we haven't missed our game!
                     println!(
                         "Game '{}' is active, but we're in game '{}'. Waiting...",
-                        active.game_id,
-                        lobby_response.game_id
+                        active.game_id, lobby_response.game_id
                     );
                     sleep(Duration::from_secs(1)).await;
                 }
-
             }
         }
     }
@@ -177,7 +172,13 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn register_player(client: &Client, host: &String, player_name: String, player_team: String, player_password: &String) -> anyhow::Result<LobbyResponse> {
+async fn register_player(
+    client: &Client,
+    host: &String,
+    player_name: String,
+    player_team: String,
+    player_password: &String,
+) -> anyhow::Result<LobbyResponse> {
     // Register with the lobby
     let lobby_req = LobbyRequest {
         name: player_name.clone(),
@@ -231,7 +232,6 @@ async fn run_game_loop(
             if active.state == GameStatus::Finished {
                 debug!("Game finished!");
                 return Ok(());
-
             } else {
                 // Game is active or queued, allow user to control
                 thrust_rotation_from_input_with_timeout(Duration::from_millis(200))?

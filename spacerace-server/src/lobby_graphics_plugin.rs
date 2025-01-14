@@ -1,6 +1,5 @@
-use bevy::app::{App, Plugin, PluginGroup, Startup};
-use bevy::color::palettes::basic::GRAY;
-use bevy::color::palettes::tailwind::{BLUE_400, GRAY_300, GRAY_800, RED_200};
+use bevy::app::{App, Plugin, PluginGroup};
+
 use bevy::color::Color;
 use bevy::prelude::*;
 use bevy::winit::WinitSettings;
@@ -9,7 +8,6 @@ use std::collections::HashMap;
 use crate::app_state::AppState;
 use crate::game_logic::ServerState;
 use crate::game_state::PendingGame;
-use bevy_rapier2d::prelude::RapierDebugRenderPlugin;
 use uuid::Uuid;
 
 pub struct LobbyGraphicsPlugin;
