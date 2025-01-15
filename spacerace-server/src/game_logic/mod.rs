@@ -160,7 +160,6 @@ pub fn setup_scene(
             // Load the image as a texture
             let texture_handle = asset_server.load(skin_path);
 
-
             commands.spawn((
                 Sprite {
                     image: texture_handle,
@@ -169,7 +168,6 @@ pub fn setup_scene(
                 },
                 // Spawn behind all other entities
                 Transform::from_xyz(0.0, 0.0, -100.0),
-
                 // Tag it so we can despawn later if needed
                 crate::components::ActiveGameEntity,
             ));

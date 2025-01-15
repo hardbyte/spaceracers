@@ -52,7 +52,8 @@ pub fn load_all_maps() -> HashMap<String, Map> {
 
     // TODO load all maps from tmx files in the maps directory
     // Use asset server
-    let map = load_tiled_map("spacerace-server/assets/maps/testmap.tmx").expect("Failed to load map");
+    let map =
+        load_tiled_map("spacerace-server/assets/maps/testmap.tmx").expect("Failed to load map");
     maps.insert(map.name.clone(), map);
 
     let map = load_tiled_map("spacerace-server/assets/maps/test.tmx").expect("Failed to load map");
@@ -88,13 +89,10 @@ fn load_tiled_map(filename: &str) -> anyhow::Result<Map> {
         })
         .unwrap_or_else(|| "tiled".to_string());
 
-    let skin_path: Option<String> = raw_map
-        .properties
-        .get("skin")
-        .and_then(|prop| match prop {
-            tiled::PropertyValue::StringValue(prop) => Some(prop.clone()),
-            _ => None,
-        });
+    let skin_path: Option<String> = raw_map.properties.get("skin").and_then(|prop| match prop {
+        tiled::PropertyValue::StringValue(prop) => Some(prop.clone()),
+        _ => None,
+    });
     tracing::info!("Map skin path: {:?}", skin_path);
 
     let map_width = raw_map.width * raw_map.tile_width;

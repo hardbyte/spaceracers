@@ -21,12 +21,18 @@ struct PlayerScoreUI {
     player_id: Uuid,
 }
 
+#[derive(Component)]
+struct PlayerScoreText {
+    player_id: Uuid,
+}
+
 /// Resource holding the entities related to the leaderboard.
-/// Storing these allows us to clean up or update them later.
 #[derive(Resource, Default)]
 struct LeaderboardUIState {
-    /// Map of `player_id` -> UI entity for that player's line.
-    score_entities: HashMap<Uuid, Entity>,
+    /// Map of `player_id` -> Node entity
+    line_entities: HashMap<Uuid, Entity>,
+    /// Map of `player_id` -> the text entity for that Node
+    text_entities: HashMap<Uuid, Entity>,
 }
 
 impl Plugin for LeaderBoardPlugin {
@@ -53,7 +59,7 @@ fn setup_leaderboard_ui(mut commands: Commands) {
 
     // Spawn a root node to hold the leaderboard.
     // We give it a semi-transparent black background using an alpha channel < 1.0.
-    let leaderboard_root = commands
+    let _leaderboard_root = commands
         .spawn((
             // A Node with flexible dimensions and layout.
             Node {
@@ -62,7 +68,6 @@ fn setup_leaderboard_ui(mut commands: Commands) {
                 // Anchor to the right of the screen.
                 right: Val::Px(0.0),
                 top: Val::Px(0.0),
-                // Give it a fixed width, and full vertical height
                 width: Val::Px(200.0),
                 height: Val::Percent(100.0),
 
@@ -76,19 +81,25 @@ fn setup_leaderboard_ui(mut commands: Commands) {
             LeaderboardUIRoot,
         ))
         .with_children(|parent| {
-            // A simple text node for our leaderboard title.
-            parent.spawn((
-                Text::new("Leaderboard"),
-                TextColor(Color::WHITE),
-                TextFont {
-                    font_size: 24.0,
+            // A simple header node for our leaderboard
+            parent
+                .spawn((Node {
+                    flex_direction: FlexDirection::Column,
+                    align_items: AlignItems::Center,
+                    margin: UiRect::all(Val::Px(20.0)),
                     ..default()
-                },
-            ));
-        })
-        .id();
-
-    debug!("Spawned leaderboard root entity: {:?}", leaderboard_root);
+                },))
+                .with_children(|leaderboard_node| {
+                    leaderboard_node.spawn((
+                        Text::new("Leaderboard"),
+                        TextColor(Color::BLACK),
+                        TextFont {
+                            font_size: 24.0,
+                            ..default()
+                        },
+                    ));
+                });
+        });
 }
 
 /// Removes the entire leaderboard UI tree when leaving the Active state.
@@ -105,18 +116,17 @@ fn cleanup_leaderboard_ui(
     }
 
     // Clear our stored UI entity references
-    leaderboard_ui_state.score_entities.clear();
+    leaderboard_ui_state.line_entities.clear();
+    leaderboard_ui_state.text_entities.clear();
 }
 
 /// Continuously updates the leaderboard UI based on current game info.
-/// - Sorts players by finish times.
-/// - Spawns/cleans up UI for each player as needed.
 fn update_leaderboard_ui_system(
     mut commands: Commands,
     app_state: Res<AppState>,
     mut leaderboard_ui_state: ResMut<LeaderboardUIState>,
     leaderboard_root_query: Query<Entity, With<LeaderboardUIRoot>>,
-    existing_entities: Query<(), With<Parent>>,
+    game_time: Res<Time>,
 ) {
     let leaderboard_root = match leaderboard_root_query.get_single() {
         Ok(e) => e,
@@ -143,79 +153,111 @@ fn update_leaderboard_ui_system(
             .then_with(|| a.name.cmp(&b.name))
     });
 
-    // Collect all the player IDs we have in the game
     let mut seen_ids = Vec::with_capacity(players.len());
 
     for (i, player) in players.iter().enumerate() {
-        let rank = i + 1;
         seen_ids.push(player.id);
 
-        // Check if we already have a UI entity for this player
-        let line_entity = leaderboard_ui_state.score_entities.get(&player.id).cloned();
+        // Check if we already have a line entity for this player
+        let line_entity = leaderboard_ui_state.line_entities.get(&player.id).copied();
+        let text_entity = leaderboard_ui_state.text_entities.get(&player.id).copied();
 
-        // If not, spawn it
-        let line_entity = if let Some(entity) = line_entity {
-            entity
-        } else {
-            debug!("Spawning new player line for: {}", player.name);
-            let new_entity = commands
-                .entity(leaderboard_root)
-                .with_children(|parent| {
-                    parent.spawn((
-                        Node {
-                            // Each line is a row
-                            flex_direction: FlexDirection::Row,
-                            margin: UiRect::all(Val::Px(5.0)),
-                            ..default()
-                        },
-                        PlayerScoreUI {
-                            player_id: player.id,
-                        },
-                    ));
-                })
-                .id();
-            leaderboard_ui_state
-                .score_entities
-                .insert(player.id, new_entity);
-            new_entity
+        // If there's no line entity for this player, spawn one
+        let line_entity = match line_entity {
+            Some(entity) => entity,
+            None => {
+                // Create the Node for the line
+                let new_line_entity = commands
+                    .entity(leaderboard_root)
+                    .with_children(|parent| {
+                        parent
+                            .spawn((
+                                Node {
+                                    flex_direction: FlexDirection::Column,
+                                    align_items: AlignItems::FlexStart,
+                                    margin: UiRect::all(Val::Px(10.0)),
+                                    padding: UiRect::all(Val::Px(5.0)),
+                                    ..default()
+                                },
+                                PlayerScoreUI {
+                                    player_id: player.id,
+                                },
+                            ))
+                            // Next, spawn a single child text entity.
+                            .with_children(|line_parent| {
+                                let new_text_entity = line_parent
+                                    .spawn((
+                                        Text::new(""),
+                                        TextColor(Color::BLACK),
+                                        TextFont {
+                                            font_size: 18.0,
+                                            ..default()
+                                        },
+                                        PlayerScoreText {
+                                            player_id: player.id,
+                                        },
+                                    ))
+                                    .id();
+
+                                // Record that text entity in our resource so we can update it
+                                leaderboard_ui_state
+                                    .text_entities
+                                    .insert(player.id, new_text_entity);
+                            });
+                    })
+                    .id();
+
+                // Store the line entity in our resource
+                leaderboard_ui_state
+                    .line_entities
+                    .insert(player.id, new_line_entity);
+
+                new_line_entity
+            }
         };
 
-        // Clear out old text children
-        commands.entity(line_entity).despawn_descendants();
+        // Now that we have a line entity, we **should** have a text entity for it too.
+        let text_entity = match text_entity {
+            Some(e) => e,
+            None => {
+                // Shouldn’t usually happen, but if it does, log an error and skip this player.
+                warn!("No text entity found for player line: {:?}", player.id);
+                continue;
+            }
+        };
 
         // Format the rank and time
-        let finish_time = game
-            .finish_times
-            .get(&player.id)
-            .map_or("In Progress".to_string(), |&time| format!("{:.2}", time));
+        let optional_finish_time = game.finish_times.get(&player.id);
+        let finish_time = optional_finish_time
+            .map_or(format!("{:.2}", game_time.elapsed_secs()), |&time| {
+                format!("{:.2}", time)
+            });
 
-        // Put a line of text: "Rank. player_name - finish_time"
-        commands.entity(line_entity).with_children(|parent| {
-            parent.spawn((
-                Text::new(format!("{}: {} - {}", rank, player.name, finish_time)),
-                TextColor(Color::WHITE),
-                TextFont {
-                    font_size: 18.0,
-                    ..default()
-                },
-            ));
-        });
+        let rank = match optional_finish_time {
+            Some(_) => format!("{}.", i + 1),
+            None => "-".to_string(),
+        };
+        let score_text = format!("{}: {} {}", rank, player.name, finish_time);
+
+        // Update the text in place by inserting a new Text component
+        // or by using an entity command with `.insert()`.
+        commands.entity(text_entity).insert(Text::new(score_text));
     }
 
     // Despawn UI for players no longer in the game
     let players_to_remove: Vec<Uuid> = leaderboard_ui_state
-        .score_entities
+        .line_entities
         .keys()
         .copied()
         .filter(|pid| !seen_ids.contains(pid))
         .collect();
 
     for pid in players_to_remove {
-        if let Some(entity) = leaderboard_ui_state.score_entities.remove(&pid) {
-            if existing_entities.contains(entity) {
-                debug!("Removing player line for old/removed player: {:?}", pid);
-                commands.entity(entity).despawn_recursive();
-            }
+        if let Some(line_entity) = leaderboard_ui_state.line_entities.remove(&pid) {
+            info!("Removing player line for old/removed player: {:?}", pid);
+            commands.entity(line_entity).despawn_recursive();
         }
+        // Also remove the text entity reference
+        leaderboard_ui_state.text_entities.remove(&pid);
     }
 }

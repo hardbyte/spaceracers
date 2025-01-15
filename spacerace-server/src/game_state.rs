@@ -28,7 +28,6 @@ impl TryFrom<PendingGame> for GameState {
     type Error = ();
 
     fn try_from(pending_game: PendingGame) -> Result<Self, Self::Error> {
-
         let map = load_map(pending_game.map_name.as_str()).ok_or(())?;
 
         Ok(GameState {

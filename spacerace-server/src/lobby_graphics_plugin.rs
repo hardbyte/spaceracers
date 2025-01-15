@@ -23,7 +23,6 @@ pub struct LobbyUIState {
 impl Plugin for LobbyGraphicsPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<LobbyUIState>()
-            //.insert_resource(WinitSettings::desktop_app())
             .add_systems(OnEnter(ServerState::Inactive), setup_lobby_ui)
             .add_systems(OnExit(ServerState::Inactive), unload_lobby_ui)
             .add_systems(

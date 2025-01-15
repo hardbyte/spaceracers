@@ -35,13 +35,25 @@ pub async fn lobby_handler(
 
     let mut pending_games = state.lobby.lock().unwrap();
 
+    // Check the player isn't already registered in any pending_games
+    if pending_games
+        .iter()
+        .any(|g| g.players.iter().any(|p| p.password == player.password))
+    {
+        info!(player_id=?player.id, "Player is already registered in a pending game");
+        return Json(LobbyResponse {
+            player_id: payload.name,
+            game_id: "already_registered".to_string(),
+            map: "already_registered".to_string(),
+        });
+    }
+
     // If no pending game exists or if they are all full, create a new one
     if pending_games.len() == 0 || pending_games.iter().all(|g| g.players.len() >= MAX_PLAYERS) {
         // TODO change the map name to be random
         pending_games.push(PendingGame::new("Starmap".to_string()));
 
         info!("Creating a new pending game");
-
     }
 
     let pending_game = pending_games
