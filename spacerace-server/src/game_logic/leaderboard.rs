@@ -86,7 +86,7 @@ fn setup_leaderboard_ui(mut commands: Commands) {
                 .spawn((Node {
                     flex_direction: FlexDirection::Column,
                     align_items: AlignItems::Center,
-                    margin: UiRect::all(Val::Px(20.0)),
+                    //margin: UiRect::all(Val::Px(10.0)),
                     ..default()
                 },))
                 .with_children(|leaderboard_node| {
@@ -94,7 +94,7 @@ fn setup_leaderboard_ui(mut commands: Commands) {
                         Text::new("Leaderboard"),
                         TextColor(Color::BLACK),
                         TextFont {
-                            font_size: 24.0,
+                            font_size: 18.0,
                             ..default()
                         },
                     ));
@@ -154,6 +154,8 @@ fn update_leaderboard_ui_system(
     });
 
     let mut seen_ids = Vec::with_capacity(players.len());
+    // store the line entities in sorted order for re-insertion.
+    let mut sorted_line_entities = Vec::with_capacity(players.len());
 
     for (i, player) in players.iter().enumerate() {
         seen_ids.push(player.id);
@@ -168,44 +170,43 @@ fn update_leaderboard_ui_system(
             None => {
                 // Create the Node for the line
                 let new_line_entity = commands
-                    .entity(leaderboard_root)
-                    .with_children(|parent| {
-                        parent
+                    .spawn((
+                        Node {
+                            flex_direction: FlexDirection::Column,
+                            align_items: AlignItems::FlexStart,
+                            margin: UiRect::all(Val::Px(10.0)),
+                            padding: UiRect::all(Val::Px(5.0)),
+                            ..default()
+                        },
+                        PlayerScoreUI {
+                            player_id: player.id,
+                        },
+                    ))
+                    // Next, spawn a single child text entity.
+                    .with_children(|line_parent| {
+                        let new_text_entity = line_parent
                             .spawn((
-                                Node {
-                                    flex_direction: FlexDirection::Column,
-                                    align_items: AlignItems::FlexStart,
-                                    margin: UiRect::all(Val::Px(10.0)),
-                                    padding: UiRect::all(Val::Px(5.0)),
+                                Text::new(""),
+                                TextColor(Color::BLACK),
+                                TextFont {
+                                    font_size: 18.0,
                                     ..default()
                                 },
-                                PlayerScoreUI {
+                                PlayerScoreText {
                                     player_id: player.id,
                                 },
                             ))
-                            // Next, spawn a single child text entity.
-                            .with_children(|line_parent| {
-                                let new_text_entity = line_parent
-                                    .spawn((
-                                        Text::new(""),
-                                        TextColor(Color::BLACK),
-                                        TextFont {
-                                            font_size: 18.0,
-                                            ..default()
-                                        },
-                                        PlayerScoreText {
-                                            player_id: player.id,
-                                        },
-                                    ))
-                                    .id();
+                            .id();
 
-                                // Record that text entity in our resource so we can update it
-                                leaderboard_ui_state
-                                    .text_entities
-                                    .insert(player.id, new_text_entity);
-                            });
+                        // Record that text entity in our resource so we can update it
+                        leaderboard_ui_state
+                            .text_entities
+                            .insert(player.id, new_text_entity);
                     })
                     .id();
+
+                // Attach the new line entity to the leaderboard root
+                commands.entity(leaderboard_root).add_child(new_line_entity);
 
                 // Store the line entity in our resource
                 leaderboard_ui_state
@@ -220,9 +221,29 @@ fn update_leaderboard_ui_system(
         let text_entity = match text_entity {
             Some(e) => e,
             None => {
-                // Shouldn’t usually happen, but if it does, log an error and skip this player.
-                warn!("No text entity found for player line: {:?}", player.id);
-                continue;
+                // Shouldn’t usually happen, but we can handle it gracefully.
+                let fallback_text_entity = commands
+                    .entity(line_entity)
+                    .with_children(|line_parent| {
+                        let new_text_entity = line_parent
+                            .spawn((
+                                Text::new(""),
+                                TextColor(Color::BLACK),
+                                TextFont {
+                                    font_size: 18.0,
+                                    ..default()
+                                },
+                                PlayerScoreText {
+                                    player_id: player.id,
+                                },
+                            ))
+                            .id();
+                        leaderboard_ui_state
+                            .text_entities
+                            .insert(player.id, new_text_entity);
+                    })
+                    .id();
+                fallback_text_entity
             }
         };
 
@@ -242,6 +263,9 @@ fn update_leaderboard_ui_system(
         // Update the text in place by inserting a new Text component
         // or by using an entity command with `.insert()`.
         commands.entity(text_entity).insert(Text::new(score_text));
+
+        // Keep track of this line in our sorted list
+        sorted_line_entities.push(line_entity);
     }
 
     // Despawn UI for players no longer in the game
@@ -260,4 +284,13 @@ fn update_leaderboard_ui_system(
         // Also remove the text entity reference
         leaderboard_ui_state.text_entities.remove(&pid);
     }
+
+    // Reorder based on sorted_line_entities
+    // First, remove all children from the leaderboard root (this doesn't despawn them).
+    commands.entity(leaderboard_root).clear_children();
+
+    // Push them back in the order we want from top to bottom
+    commands
+        .entity(leaderboard_root)
+        .add_children(&sorted_line_entities);
 }
