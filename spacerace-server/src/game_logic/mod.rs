@@ -75,6 +75,15 @@ pub fn spawn_ships(
 
     let active_game_guard = app_state.active_game.lock().unwrap();
     if let Some(active_game) = active_game_guard.as_ref() {
+        let sprite_image = asset_server.load(
+            active_game
+                .map
+                .ship_path
+                .clone()
+                .unwrap_or("ferris.png".to_string())
+                .clone(),
+        );
+
         for player in &active_game.players {
             // Generate a random hue for this player's ship
             let hue = rng.gen_range(0.0..360.0);
@@ -92,7 +101,7 @@ pub fn spawn_ships(
                 },
                 Sprite {
                     //color,
-                    image: asset_server.load("ferris.png"),
+                    image: sprite_image.clone(),
                     custom_size: Some(Vec2::new(sprite_size, sprite_size)),
                     ..Default::default()
                 },
@@ -146,11 +155,11 @@ pub fn setup_scene(
         for finish in &map.finish_regions {
             commands.spawn((
                 components::ActiveGameEntity,
-                Sprite {
-                    image: asset_server.load("fining.png"),
-                    custom_size: Some(Vec2::new(100.0, 75.0)),
-                    ..Default::default()
-                },
+                // Sprite {
+                //     image: asset_server.load("finish.png"),
+                //     custom_size: Some(Vec2::new(100.0, 75.0)),
+                //     ..Default::default()
+                // },
                 Transform::from_xyz(finish.position.x, finish.position.y, 0.0),
                 // Note we only handle Tiled polygons, ideally handle rectangle objects etc
                 Collider::polyline(finish.polygon.clone(), None),
