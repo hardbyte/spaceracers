@@ -59,6 +59,9 @@ pub fn load_all_maps() -> HashMap<String, Map> {
     let map = load_tiled_map("spacerace-server/assets/maps/test.tmx").expect("Failed to load map");
     maps.insert(map.name.clone(), map);
 
+    let map = load_tiled_map("spacerace-server/assets/maps/aga.tmx").expect("Failed to load map");
+    maps.insert(map.name.clone(), map);
+
     maps
 }
 

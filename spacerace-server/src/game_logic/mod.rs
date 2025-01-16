@@ -142,9 +142,15 @@ pub fn setup_scene(
         }
 
         // Finish zone colliders
+        // Note we only handle Tiled polygons, ideally handle rectangle objects etc
         for finish in &map.finish_regions {
             commands.spawn((
                 components::ActiveGameEntity,
+                Sprite {
+                    image: asset_server.load("fining.png"),
+                    custom_size: Some(Vec2::new(100.0, 75.0)),
+                    ..Default::default()
+                },
                 Transform::from_xyz(finish.position.x, finish.position.y, 0.0),
                 // Note we only handle Tiled polygons, ideally handle rectangle objects etc
                 Collider::polyline(finish.polygon.clone(), None),
