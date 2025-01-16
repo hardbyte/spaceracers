@@ -8,6 +8,7 @@ use axum::Json;
 use serde::{Deserialize, Serialize};
 
 use std::time::Duration;
+use rand::prelude::SliceRandom;
 use tracing::info;
 
 const MIN_PLAYERS: usize = 1; // Minimum players to start a game
@@ -50,8 +51,14 @@ pub async fn lobby_handler(
 
     // If no pending game exists or if they are all full, create a new one
     if pending_games.len() == 0 || pending_games.iter().all(|g| g.players.len() >= MAX_PLAYERS) {
-        // TODO change the map name to be random
-        pending_games.push(PendingGame::new("Starmap".to_string()));
+
+        // TODO load these from the maps directory
+        let maps = vec!["Aga".to_string(), "Starmap".to_string(), "default_map".to_string(), "tiled".to_string()];
+        let random_map_ref = maps
+            .choose(&mut rand::thread_rng())
+            .unwrap();
+        let random_map = random_map_ref.clone();
+        pending_games.push(PendingGame::new(random_map.to_string()));
 
         info!("Creating a new pending game");
     }

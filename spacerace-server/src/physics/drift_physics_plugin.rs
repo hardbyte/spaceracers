@@ -13,7 +13,6 @@ use bevy_rapier2d::rapier::prelude::Collider;
 use tracing::info;
 
 // TODO make these based on the map size
-const BOUNDS: Vec2 = Vec2::new(900.0, 640.0);
 
 pub fn setup_physics(mut commands: Commands) {}
 
@@ -81,13 +80,18 @@ impl Plugin for DriftPhysicsPlugin {
 
 pub fn apply_bounds_system(
     mut player_info: Query<(&components::ship::ControllableShip, &mut Transform)>,
+    app_state: Res<AppState>,
 ) {
-    for (player, mut transform) in &mut player_info {
-        // TODO fix this
-        // bound the ship within invisible level bounds
-        let extents = Vec3::from((crate::physics::drift_physics_plugin::BOUNDS / 2.0, 0.0));
-        transform.translation = transform.translation.min(extents).max(-extents);
+    let active_game_guard = app_state.active_game.lock().unwrap();
+    if let Some(active_game) = active_game_guard.as_ref() {
+        for (player, mut transform) in &mut player_info {
+            // bound the ship within invisible level bounds
+            // Note the map is centered at 0,0
+            let extents = Vec3::from((active_game.map.size/2.0, 0.0));
+            transform.translation = transform.translation.min(extents).max(-extents);
+        }
     }
+
 }
 
 pub fn apply_keyboard_controls_system(
