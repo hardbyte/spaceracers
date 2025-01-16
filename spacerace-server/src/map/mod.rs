@@ -7,6 +7,7 @@ use std::collections::HashMap;
 pub struct Map {
     pub name: String,
     pub skin_path: Option<String>,
+    pub ship_path: Option<String>,
     pub size: Vec2,
     pub gravity: f32,
     pub obstacles: Vec<VectorObject>,
@@ -27,6 +28,7 @@ pub fn load_all_maps() -> HashMap<String, Map> {
         Map {
             name: "default_map".to_string(),
             skin_path: None,
+            ship_path: None,
             size: Vec2::new(900.0, 640.0),
             gravity: 0.0,
             obstacles: vec![VectorObject {
@@ -53,10 +55,11 @@ pub fn load_all_maps() -> HashMap<String, Map> {
     // TODO load all maps from tmx files in the maps directory
     // Use asset server
     let map =
-        load_tiled_map("spacerace-server/assets/maps/testmap.tmx").expect("Failed to load map");
+        load_tiled_map("spacerace-server/assets/maps/starmap.tmx").expect("Failed to load map");
     maps.insert(map.name.clone(), map);
 
-    let map = load_tiled_map("spacerace-server/assets/maps/test.tmx").expect("Failed to load map");
+    let map = load_tiled_map("spacerace-server/assets/maps/christchurch.tmx")
+        .expect("Failed to load map");
     maps.insert(map.name.clone(), map);
 
     let map = load_tiled_map("spacerace-server/assets/maps/aga.tmx").expect("Failed to load map");
@@ -98,6 +101,12 @@ fn load_tiled_map(filename: &str) -> anyhow::Result<Map> {
     });
     tracing::info!("Map skin path: {:?}", skin_path);
 
+    let ship_path: Option<String> = raw_map.properties.get("ship").and_then(|prop| match prop {
+        tiled::PropertyValue::StringValue(prop) => Some(prop.clone()),
+        _ => None,
+    });
+    tracing::info!("Ship path: {:?}", ship_path);
+
     let map_width = raw_map.width * raw_map.tile_width;
     let map_height = raw_map.height * raw_map.tile_height;
 
@@ -114,6 +123,7 @@ fn load_tiled_map(filename: &str) -> anyhow::Result<Map> {
     let mut map = Map {
         name: map_name,
         skin_path,
+        ship_path,
         size: Vec2::new(map_width as f32, map_height as f32),
         gravity,
         obstacles: vec![],

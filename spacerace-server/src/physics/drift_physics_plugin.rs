@@ -87,11 +87,10 @@ pub fn apply_bounds_system(
         for (player, mut transform) in &mut player_info {
             // bound the ship within invisible level bounds
             // Note the map is centered at 0,0
-            let extents = Vec3::from((active_game.map.size/2.0, 0.0));
+            let extents = Vec3::from((active_game.map.size / 2.0, 0.0));
             transform.translation = transform.translation.min(extents).max(-extents);
         }
     }
-
 }
 
 pub fn apply_keyboard_controls_system(

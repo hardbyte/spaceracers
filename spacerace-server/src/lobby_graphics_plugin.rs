@@ -56,6 +56,9 @@ struct PlayerUI {
 #[derive(Component)]
 struct QuitGameButton;
 
+#[derive(Component)]
+struct LobbyUIMessage;
+
 const NORMAL_BUTTON: Color = Color::srgb(0.15, 0.15, 0.15);
 const HOVERED_BUTTON: Color = Color::srgb(0.95, 0.25, 0.25);
 const PRESSED_BUTTON: Color = Color::srgb(0.35, 0.95, 0.35);
@@ -98,6 +101,7 @@ pub fn setup_lobby_ui(mut commands: Commands) {
                         },
                     ));
                     text_node.spawn((
+                        LobbyUIMessage,
                         Text::new("Waiting for players to join..."),
                         TextColor(Color::WHITE),
                         TextFont {
@@ -318,7 +322,7 @@ fn button_interaction_system(
     >,
 ) {
     for (interaction, mut bg_color, mut border_color) in &mut query {
-        tracing::info!("Button interaction: {:?}", interaction);
+        tracing::trace!("Button interaction: {:?}", interaction);
         match *interaction {
             Interaction::Pressed => {
                 *bg_color = PRESSED_BUTTON.into();

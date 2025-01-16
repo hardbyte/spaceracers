@@ -4,6 +4,7 @@ mod tests {
     use crate::network::api::root_handler;
     use crate::network::lobby_route::{lobby_handler, LobbyResponse};
 
+    use crate::components::PlayerRegistration;
     use axum::routing::{get, post};
     use axum::{
         body::Body,
@@ -12,7 +13,6 @@ mod tests {
     use http_body_util::BodyExt;
     use tower::ServiceExt;
     use uuid::Uuid;
-    use crate::components::PlayerRegistration;
 
     #[tokio::test]
     async fn test_root_handler() {

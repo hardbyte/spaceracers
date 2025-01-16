@@ -2,10 +2,11 @@
 <map version="1.8" tiledversion="1.8.2" orientation="orthogonal" renderorder="right-down" width="2332" height="1458" tilewidth="1" tileheight="1" infinite="0" nextlayerid="4" nextobjectid="16">
  <properties>
   <property name="name" value="Aga"/>
-  <property name="skin" value="aga-new.png"/>
+  <property name="ship" value="partly.png"/>
+  <property name="skin" value="aga.png"/>
  </properties>
  <imagelayer id="2" name="Image Layer 1">
-  <image source="../aga.png" width="2332" height="1458"/>
+  <image source="../aga.png" width="2048" height="1280"/>
  </imagelayer>
  <objectgroup id="3" name="Object Layer 1">
   <object id="1" x="324.667" y="605.333">
@@ -33,7 +34,7 @@
    <polygon points="0,0 50.6667,-22.6667 129.333,29.3333 134.667,104 141.333,204 110.667,212 96,198.667 41.3333,101.333"/>
   </object>
   <object id="11" x="-372" y="1048"/>
-  <object id="14" name="start" type="start" x="1564" y="108">
+  <object id="14" name="start" type="start" x="1592" y="720">
    <polygon points="0,0 292,176 360,16 396,-68"/>
   </object>
   <object id="15" name="finish" type="finish" x="108" y="1116">

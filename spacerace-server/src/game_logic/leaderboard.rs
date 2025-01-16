@@ -86,12 +86,11 @@ fn setup_leaderboard_ui(mut commands: Commands) {
                 .spawn((Node {
                     flex_direction: FlexDirection::Column,
                     align_items: AlignItems::Center,
-                    //margin: UiRect::all(Val::Px(10.0)),
                     ..default()
                 },))
                 .with_children(|leaderboard_node| {
                     leaderboard_node.spawn((
-                        Text::new("Leaderboard"),
+                        Text::new("Spaceracers"),
                         TextColor(Color::BLACK),
                         TextFont {
                             font_size: 18.0,
