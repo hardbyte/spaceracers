@@ -2,7 +2,7 @@
 <map version="1.8" tiledversion="1.8.2" orientation="orthogonal" renderorder="right-down" width="2332" height="1458" tilewidth="1" tileheight="1" infinite="0" nextlayerid="4" nextobjectid="16">
  <properties>
   <property name="name" value="Aga"/>
-  <property name="ship" value="partly.png"/>
+  <property name="ship" value="ferris.png"/>
   <property name="skin" value="aga.png"/>
  </properties>
  <imagelayer id="2" name="Image Layer 1">

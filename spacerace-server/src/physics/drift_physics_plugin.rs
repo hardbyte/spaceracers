@@ -79,16 +79,41 @@ impl Plugin for DriftPhysicsPlugin {
 }
 
 pub fn apply_bounds_system(
-    mut player_info: Query<(&components::ship::ControllableShip, &mut Transform)>,
+    mut player_info: Query<(&components::ship::ControllableShip, &Sprite, &mut Transform)>,
     app_state: Res<AppState>,
 ) {
     let active_game_guard = app_state.active_game.lock().unwrap();
     if let Some(active_game) = active_game_guard.as_ref() {
-        for (player, mut transform) in &mut player_info {
-            // bound the ship within invisible level bounds
-            // Note the map is centered at 0,0
-            let extents = Vec3::from((active_game.map.size / 2.0, 0.0));
-            transform.translation = transform.translation.min(extents).max(-extents);
+        // The map is centered at (0,0), with `map.size` specifying total width & height.
+        // So half of that is the "max" in each axis direction.
+        let half_map_width = active_game.map.size.x / 2.0;
+        let half_map_height = active_game.map.size.y / 2.0;
+
+        for (player, sprite, mut transform) in &mut player_info {
+            // Suppose the ship sprite is, for example, 25.0 x 25.0.
+            // This ensures the entire sprite is clamped on-screen.
+            // If `custom_size` isn’t set, you can fallback to a default radius or just skip it.
+            let half_ship_width = match sprite.custom_size {
+                Some(size) => size.x / 2.0,
+                None => 0.0, // or a fallback radius
+            };
+            let half_ship_height = match sprite.custom_size {
+                Some(size) => size.y / 2.0,
+                None => 0.0,
+            };
+
+            // Calculate the min and max coordinates
+            // so the entire sprite stays inside the map.
+            let min_x = -half_map_width + half_ship_width;
+            let max_x = half_map_width - half_ship_width;
+            let min_y = -half_map_height + half_ship_height;
+            let max_y = half_map_height - half_ship_height;
+
+            // Now clamp each axis
+            transform.translation.x = transform.translation.x.clamp(min_x, max_x);
+            transform.translation.y = transform.translation.y.clamp(min_y, max_y);
+
+            // Z should remain unchanged, so no clamp for transform.translation.z
         }
     }
 }

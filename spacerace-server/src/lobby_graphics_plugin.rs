@@ -25,14 +25,9 @@ impl Plugin for LobbyGraphicsPlugin {
         app.init_resource::<LobbyUIState>()
             .add_systems(OnEnter(ServerState::Inactive), setup_lobby_ui)
             .add_systems(OnExit(ServerState::Inactive), unload_lobby_ui)
-            .add_systems(
-                Update,
-                update_lobby_ui_system.run_if(in_state(ServerState::Inactive)),
-            )
-            .add_systems(
-                Update,
-                button_interaction_system.run_if(in_state(ServerState::Inactive)),
-            );
+            .add_systems(Update, update_lobby_ui_system.run_if(in_state(ServerState::Inactive)))
+            .add_systems(Update, update_lobby_message_system.run_if(in_state(ServerState::Inactive)))
+            .add_systems(Update, button_interaction_system.run_if(in_state(ServerState::Inactive)));
     }
 }
 
@@ -147,6 +142,63 @@ pub fn setup_lobby_ui(mut commands: Commands) {
 pub fn unload_lobby_ui(mut commands: Commands, lobby_query: Query<Entity, With<LobbyUIRoot>>) {
     for entity in lobby_query.iter() {
         commands.entity(entity).despawn_recursive();
+    }
+}
+
+
+/// System that updates the lobby message to show how many seconds remain
+/// until the next scheduler tick.
+fn update_lobby_message_system(
+    // We only have a scheduler if `GameSchedulerConfig` was inserted.
+    config: Option<Res<crate::game_logic::GameSchedulerConfig>>,
+    app_state: Res<AppState>,
+    mut query: Query<&mut Text, With<LobbyUIMessage>>,
+) {
+    // If we have the scheduler config (and thus the timer), update the lobby message.
+    if let Some(game_scheduler) = config {
+        let timer = &game_scheduler.timer;
+
+        // Because it's a repeating timer, `elapsed_secs()` will count up.
+        // We can figure out how many seconds are left until the next tick by:
+        //   1) taking the total duration,
+        //   2) using modulo to see how far we are into the period,
+        //   3) subtracting that remainder from the full duration.
+        // Round it to a whole number for nicer display.
+        let total = timer.duration().as_secs_f32();
+        let elapsed_in_cycle = timer.elapsed_secs() % total;
+        let time_remaining = (total - elapsed_in_cycle).ceil();
+
+        // let pending_games = app_state.lobby.lock().unwrap();
+        //
+        // match pending_games.len() {
+        //     0 => {
+        //         for mut text in &mut query {
+        //             **text = "Waiting for players to join...".to_string();
+        //         }
+        //     }
+        //     _n => {
+        //         let next_game = &pending_games[0];
+        //         let num_players = next_game.players.len();
+        //         for mut text in &mut query {
+        //             **text = format!(
+        //                 "{} player registered... Game starting in {:.0}s",
+        //                 num_players,
+        //                 time_remaining
+        //             );
+        //         }
+        //     }
+        // }
+        for mut text in &mut query {
+            **text = format!(
+                "Waiting for players to join... Game starting in {:.0}s",
+                time_remaining
+            );
+        }
+    } else {
+        // If we don’t have a scheduler yet, just show the original message.
+        for mut text in &mut query {
+            **text = "Waiting for players to join...".to_string();
+        }
     }
 }
 

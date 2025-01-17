@@ -43,27 +43,35 @@ pub async fn state_handler(
     State(state): State<AppState>,
     query: Option<Query<StateQuery>>,
 ) -> Json<StateResponse> {
-    let guard = state.active_game.lock().unwrap();
-    let active_game = match guard.as_ref() {
-        Some(game) => game,
-        None => {
-            tracing::debug!("state requested but no game running");
+    match state.active_game.lock() {
+        Ok(guard) => {
+            let active_game = match guard.as_ref() {
+                Some(game) => game,
+                None => {
+                    tracing::debug!("state requested but no game running");
+                    return Json(StateResponse::Inactive);
+                }
+            };
+
+            let query_game_id = query
+                .map(|q| q.game_id.clone())
+                .unwrap_or_else(|| active_game.game_id.to_string());
+
+            tracing::Span::current().record("game.id", &active_game.game_id.to_string().deref());
+
+            if query_game_id == active_game.game_id.to_string() {
+                let public_game_state = PublicGameState::from(active_game);
+                tracing::debug!(state = ?public_game_state, "Returning game state");
+                Json(StateResponse::Active(public_game_state))
+            } else {
+                tracing::debug!("Game state requested for inactive game");
+                Json(StateResponse::Inactive)
+            }
+        },
+        Err(poisoned) => {
+            tracing::error!("Failed to acquire lock on active game: {:?}", poisoned);
             return Json(StateResponse::Inactive);
         }
-    };
-
-    let query_game_id = query
-        .map(|q| q.game_id.clone())
-        .unwrap_or_else(|| active_game.game_id.to_string());
-
-    tracing::Span::current().record("game.id", &active_game.game_id.to_string().deref());
-
-    if query_game_id == active_game.game_id.to_string() {
-        let public_game_state = PublicGameState::from(active_game);
-        tracing::debug!(state = ?public_game_state, "Returning game state");
-        Json(StateResponse::Active(public_game_state))
-    } else {
-        tracing::debug!("Game state requested for inactive game");
-        Json(StateResponse::Inactive)
     }
+
 }
