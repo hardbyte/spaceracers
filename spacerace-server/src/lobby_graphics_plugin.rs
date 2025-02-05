@@ -257,7 +257,7 @@ pub fn update_lobby_ui_system(
                             game_node.spawn((
                                 Text::new(format!(
                                     "Game: {} | Map: {}",
-                                    game.game_id, game.map_name
+                                    game.game_id, game.map_id.0
                                 )),
                                 TextColor(Color::WHITE),
                             ));
