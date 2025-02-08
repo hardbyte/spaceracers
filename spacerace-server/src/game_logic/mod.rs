@@ -25,9 +25,8 @@ impl Plugin for GameLogicPlugin {
             )
             .add_systems(
                 OnEnter(ServerState::Active),
-                (setup_scene, spawn_ships, start_game).before(
-                    crate::particle_effects::attach_thruster_effects_to_ships
-                ),
+                (setup_scene, spawn_ships, start_game)
+                    .before(crate::particle_effects::attach_thruster_effects_to_ships),
             )
             .add_systems(OnExit(ServerState::Active), (unload_game_entities))
             .add_systems(OnEnter(ServerState::Inactive), (setup_game_scheduler))

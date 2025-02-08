@@ -1,14 +1,14 @@
+use crate::lobby_graphics_plugin::LobbyGraphicsPlugin;
 use bevy::app::{App, Plugin, Startup};
 use bevy::color::Color;
-use bevy::prelude::{*};
-use bevy_hanabi::HanabiPlugin;
-use crate::lobby_graphics_plugin::LobbyGraphicsPlugin;
+use bevy::prelude::*;
 use bevy_hanabi::prelude::*;
+use bevy_hanabi::HanabiPlugin;
 
 // I'm using this to visualize the physics engine
 // It is likely not part of the final game
-use bevy_rapier2d::prelude::RapierDebugRenderPlugin;
 use crate::particle_effects::ParticleEffectsPlugin;
+use bevy_rapier2d::prelude::RapierDebugRenderPlugin;
 
 pub struct GraphicsPlugin;
 
@@ -25,7 +25,6 @@ fn setup_graphics(mut commands: Commands) {
     ));
 }
 
-
 impl Plugin for GraphicsPlugin {
     fn build(&self, app: &mut App) {
         // Background
@@ -39,7 +38,6 @@ impl Plugin for GraphicsPlugin {
 
         // TODO make a feature flag
         //app.add_plugins(RapierDebugRenderPlugin::default());
-
 
         app.add_plugins(LobbyGraphicsPlugin);
         app.add_plugins(ParticleEffectsPlugin);

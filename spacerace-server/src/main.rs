@@ -61,8 +61,7 @@ fn main() {
                 ..default()
             }),
             ..default()
-        }))
-        ;
+        }));
     }
     #[cfg(not(feature = "ui"))]
     {

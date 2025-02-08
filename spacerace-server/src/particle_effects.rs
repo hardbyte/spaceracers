@@ -8,20 +8,18 @@ use crate::components::ship::ControllableShip;
 use crate::control::ShipInput;
 use crate::game_logic::ServerState;
 
-use bevy_rapier2d::pipeline::CollisionEvent;
-use std::time::Duration;
-use std::collections::HashMap;
 use bevy_rapier2d::na::{DimAdd, DimMul, DimSub};
+use bevy_rapier2d::pipeline::CollisionEvent;
+use std::collections::HashMap;
+use std::time::Duration;
 
 /// This plugin sets up both thruster and collision particle effects
 /// once the game goes into the Active state.
 pub struct ParticleEffectsPlugin;
 
-
 /// Marker so we can query the thruster effect entity
 #[derive(Component)]
 struct ShipThrusterEffect;
-
 
 #[derive(Resource, Default)]
 pub struct ThrusterEffectHandles {
@@ -38,28 +36,30 @@ impl Plugin for ParticleEffectsPlugin {
     fn build(&self, app: &mut App) {
         // Add the Hanabi plugin
         app.add_plugins(HanabiPlugin)
-
-        // Create our custom resources that hold the effect handles
-        .init_resource::<ThrusterEffectHandles>()
+            // Create our custom resources that hold the effect handles
+            .init_resource::<ThrusterEffectHandles>()
             .init_resource::<CollisionEffectHandle>()
+            // When the game starts (Active), load effect assets & attach thrusters
+            .add_systems(
+                OnEnter(ServerState::Active),
+                load_effect_assets.before(attach_thruster_effects_to_ships),
+            )
+            // Note this is added in game_logic after ships have spawned to attach thrusters
+            .add_systems(
+                OnEnter(ServerState::Active),
+                attach_thruster_effects_to_ships,
+            )
+            .add_systems(
+                Update,
+                update_thruster_effect_system.run_if(in_state(ServerState::Active)),
+            );
 
-        // When the game starts (Active), load effect assets & attach thrusters
-        .add_systems(OnEnter(ServerState::Active), load_effect_assets.before(attach_thruster_effects_to_ships))
+        //(
 
-        // Note this is added in game_logic after ships have spawned to attach thrusters
-        .add_systems(OnEnter(ServerState::Active), attach_thruster_effects_to_ships)
-
-        .add_systems(Update, update_thruster_effect_system.run_if(in_state(ServerState::Active)));
-
-            //(
-
-                // spawn_collision_effect_system.after("handle_collision_events"),
-            //)
-
-
+        // spawn_collision_effect_system.after("handle_collision_events"),
+        //)
     }
 }
-
 
 pub(crate) fn load_effect_assets(
     mut commands: Commands,
@@ -93,10 +93,7 @@ pub(crate) fn load_effect_assets(
 
     // Add the base velocity and random offset to get the final velocity
     let final_velocity = base_velocity + random_offset;
-    let init_velocity = SetAttributeModifier::new(
-        Attribute::VELOCITY,
-        final_velocity.expr(),
-    );
+    let init_velocity = SetAttributeModifier::new(Attribute::VELOCITY, final_velocity.expr());
 
     // Give particles a lifetime of 0.7 sec
     let init_lifetime = SetAttributeModifier::new(Attribute::LIFETIME, writer.lit(0.7).expr());
@@ -114,7 +111,6 @@ pub(crate) fn load_effect_assets(
     // Fade away
     color_gradient1.add_key(1.0, Vec4::new(1.0, 0.0, 0.0, 0.0));
 
-
     let thruster_effect = effects.add(
         EffectAsset::new(8192, thruster_spawner, writer.finish())
             .with_name("ThrusterEffect")
@@ -122,8 +118,9 @@ pub(crate) fn load_effect_assets(
             .init(init_velocity)
             .init(init_lifetime)
             .init(init_age)
-
-            .render(ColorOverLifetimeModifier {gradient: color_gradient1})
+            .render(ColorOverLifetimeModifier {
+                gradient: color_gradient1,
+            })
             .render(SetSizeModifier {
                 size: Vec3::splat(3.0).into(), // px wide
             }),
@@ -140,7 +137,8 @@ pub(crate) fn load_effect_assets(
         center: writer2.lit(Vec3::ZERO).expr(),
         speed: writer2.lit(2.).expr(),
     };
-    let init_collision_lifetime = SetAttributeModifier::new(Attribute::LIFETIME, writer2.lit(0.5).expr());
+    let init_collision_lifetime =
+        SetAttributeModifier::new(Attribute::LIFETIME, writer2.lit(0.5).expr());
     let init_collision_age = SetAttributeModifier::new(Attribute::AGE, writer2.lit(0.).expr());
     let init_collision_color = SetAttributeModifier::new(
         Attribute::COLOR,
@@ -163,7 +161,6 @@ pub(crate) fn load_effect_assets(
 
     info!("Loaded thruster and collision effect assets.");
 }
-
 
 pub(crate) fn attach_thruster_effects_to_ships(
     mut commands: Commands,
@@ -197,7 +194,9 @@ fn update_thruster_effect_system(
     let control_inputs = app_state.control_inputs.lock().unwrap();
 
     for (parent, mut spawner) in effects_query.iter_mut() {
-        let Ok(ship) = ships_query.get(parent.get()) else { continue };
+        let Ok(ship) = ships_query.get(parent.get()) else {
+            continue;
+        };
 
         let player_uuid = ship.id;
         let thrust_input = control_inputs
@@ -211,7 +210,5 @@ fn update_thruster_effect_system(
 
         // TODO modify the particle rate based on the thrust
         spawner.set_active(rate > 0.0);
-
-
     }
 }
