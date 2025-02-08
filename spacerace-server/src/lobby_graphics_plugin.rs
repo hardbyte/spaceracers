@@ -25,9 +25,18 @@ impl Plugin for LobbyGraphicsPlugin {
         app.init_resource::<LobbyUIState>()
             .add_systems(OnEnter(ServerState::Inactive), setup_lobby_ui)
             .add_systems(OnExit(ServerState::Inactive), unload_lobby_ui)
-            .add_systems(Update, update_lobby_ui_system.run_if(in_state(ServerState::Inactive)))
-            .add_systems(Update, update_lobby_message_system.run_if(in_state(ServerState::Inactive)))
-            .add_systems(Update, button_interaction_system.run_if(in_state(ServerState::Inactive)));
+            .add_systems(
+                Update,
+                update_lobby_ui_system.run_if(in_state(ServerState::Inactive)),
+            )
+            .add_systems(
+                Update,
+                update_lobby_message_system.run_if(in_state(ServerState::Inactive)),
+            )
+            .add_systems(
+                Update,
+                button_interaction_system.run_if(in_state(ServerState::Inactive)),
+            );
     }
 }
 
@@ -144,7 +153,6 @@ pub fn unload_lobby_ui(mut commands: Commands, lobby_query: Query<Entity, With<L
         commands.entity(entity).despawn_recursive();
     }
 }
-
 
 /// System that updates the lobby message to show how many seconds remain
 /// until the next scheduler tick.
@@ -368,18 +376,20 @@ fn update_game_players(
 /// A system to handle button state changes and clicks.
 /// Updates the button's background color and border color, and triggers logic on click.
 fn button_interaction_system(
+    mut exit: EventWriter<AppExit>,
     mut query: Query<
         (&Interaction, &mut BackgroundColor, &mut BorderColor),
         (Changed<Interaction>, With<Button>, With<QuitGameButton>),
     >,
 ) {
     for (interaction, mut bg_color, mut border_color) in &mut query {
-        tracing::trace!("Button interaction: {:?}", interaction);
+        trace!("Button interaction: {:?}", interaction);
         match *interaction {
             Interaction::Pressed => {
                 *bg_color = PRESSED_BUTTON.into();
                 border_color.0 = Color::WHITE;
-                // TODO Use an event to trigger the start
+                warn!("Shutting down the game");
+                exit.send(AppExit::Success);
             }
             Interaction::Hovered => {
                 *bg_color = HOVERED_BUTTON.into();

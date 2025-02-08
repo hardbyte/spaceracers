@@ -20,7 +20,7 @@ Features
 Run the HTTP server with a simple UI:
 
 ```shell
-spaceracer_server=debug cargo run --bin spacerace-server --features ui
+RUST_LOG=warn,spaceracer_server=debug cargo run --bin spacerace-server --features ui
 ```
 
 Or run with wayland support:

@@ -67,11 +67,10 @@ pub async fn state_handler(
                 tracing::debug!("Game state requested for inactive game");
                 Json(StateResponse::Inactive)
             }
-        },
+        }
         Err(poisoned) => {
             tracing::error!("Failed to acquire lock on active game: {:?}", poisoned);
             return Json(StateResponse::Inactive);
         }
     }
-
 }
