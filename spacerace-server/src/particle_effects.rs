@@ -44,7 +44,7 @@ impl Plugin for ParticleEffectsPlugin {
                 OnEnter(ServerState::Active),
                 load_effect_assets.before(attach_thruster_effects_to_ships),
             )
-            // Note this is added in game_logic after ships have spawned to attach thrusters
+            // Note this is referenced in game_logic plugin to ensure it runs after the ships have spawned
             .add_systems(
                 OnEnter(ServerState::Active),
                 attach_thruster_effects_to_ships,
@@ -55,7 +55,6 @@ impl Plugin for ParticleEffectsPlugin {
             );
 
         //(
-
         // spawn_collision_effect_system.after("handle_collision_events"),
         //)
     }
@@ -89,14 +88,14 @@ pub(crate) fn load_effect_assets(
     let random_value = writer.rand(ScalarType::Float) - writer.lit(0.5);
 
     // Multiply by a vector to scale the spread (here, ±2.0 on the X axis)
-    let random_offset = random_value * writer.lit(Vec3::new(4.0, 0.0, 0.0));
+    let random_offset = random_value * writer.lit(Vec3::new(30.0, 0.0, 0.0));
 
     // Add the base velocity and random offset to get the final velocity
     let final_velocity = base_velocity + random_offset;
     let init_velocity = SetAttributeModifier::new(Attribute::VELOCITY, final_velocity.expr());
 
-    // Give particles a lifetime of 0.7 sec
-    let init_lifetime = SetAttributeModifier::new(Attribute::LIFETIME, writer.lit(0.7).expr());
+    // Give particles a lifetime
+    let init_lifetime = SetAttributeModifier::new(Attribute::LIFETIME, writer.lit(0.9).expr());
 
     // Age starts at 0
     let init_age = SetAttributeModifier::new(Attribute::AGE, writer.lit(0.).expr());
@@ -105,11 +104,13 @@ pub(crate) fn load_effect_assets(
     // Start bright white
     color_gradient1.add_key(0.0, Vec4::new(1.0, 1.0, 1.0, 1.0));
     // Transition to orange
-    color_gradient1.add_key(0.3, Vec4::new(1.0, 0.5, 0.05, 1.0));
+    color_gradient1.add_key(0.2, Vec4::new(1.0, 0.5, 0.05, 1.0));
     // Then to red
-    color_gradient1.add_key(0.6, Vec4::new(1.0, 0.2, 0.0, 1.0));
+    color_gradient1.add_key(0.5, Vec4::new(1.0, 0.2, 0.0, 1.0));
+    // Darken
+    color_gradient1.add_key(0.8, Vec4::new(0.3, 0.0, 0.0, 1.0));
     // Fade away
-    color_gradient1.add_key(1.0, Vec4::new(1.0, 0.0, 0.0, 0.0));
+    color_gradient1.add_key(1.0, Vec4::new(0.0, 0.0, 0.0, 0.0));
 
     let thruster_effect = effects.add(
         EffectAsset::new(8192, thruster_spawner, writer.finish())
@@ -159,7 +160,7 @@ pub(crate) fn load_effect_assets(
 
     collision_res.effect = collision_effect;
 
-    info!("Loaded thruster and collision effect assets.");
+    debug!("Loaded thruster and collision effect assets.");
 }
 
 pub(crate) fn attach_thruster_effects_to_ships(
@@ -168,7 +169,7 @@ pub(crate) fn attach_thruster_effects_to_ships(
     ship_query: Query<Entity, With<ControllableShip>>,
 ) {
     for ship_ent in &ship_query {
-        tracing::warn!("Attaching thruster effect to ship {:?}", ship_ent);
+        tracing::debug!("Attaching thruster effect to ship {:?}", ship_ent);
         // Attach a child for the thruster effect
         // We'll put the effect slightly behind the ship on the Y axis.
         commands.entity(ship_ent).with_children(|parent| {
@@ -182,7 +183,7 @@ pub(crate) fn attach_thruster_effects_to_ships(
                 .insert(ShipThrusterEffect); // a marker component so we can query them
         });
     }
-    info!("Spawned thruster child effect for each ship.");
+    info!("Spawned thrusters for each ship.");
 }
 
 fn update_thruster_effect_system(
@@ -205,8 +206,12 @@ fn update_thruster_effect_system(
             .unwrap_or(0.0);
 
         // 0 => no effect, > 0 => thruster effect on
-        // maximum of 60 p/s
-        let rate = if thrust_input > 0.0 { 60.0 } else { 0.0 };
+        // maximum of 600 p/s
+        let rate = if thrust_input > 0.0 {
+            thrust_input * 600.0
+        } else {
+            0.0
+        };
 
         // TODO modify the particle rate based on the thrust
         spawner.set_active(rate > 0.0);
