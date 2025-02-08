@@ -194,11 +194,7 @@ fn update_thruster_effect_system(
         // maximum of 60 p/s
         let rate = if thrust_input > 0.0 { 60.0 } else { 0.0 };
 
-        if let Some(spawner) = effect.get_spawner_mut() {
-            // If this effect was built with Spawner::rate(...):
-            if let Spawner::Rate { spawn_rate, .. } = spawner {
-                *spawn_rate = rate;
-            }
+        // TODO AI use the rate
 
-        }
+    }
 }
