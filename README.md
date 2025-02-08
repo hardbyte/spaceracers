@@ -87,7 +87,7 @@ Content-Type: application/json
 A simple client is provided in the `spacerace-client` directory. To run it, use the following command:
 
 ```shell
-PLAYER_TEAM=Humans PLAYER_NAME=Brian SPACERACERS_SERVER=http://10.1.0.179:5000 cargo run --package spacerace-client
+PLAYER_TEAM=Humans PLAYER_NAME=Brian SPACERACERS_SERVER=http://localhost:5000 cargo run --package spacerace-client
 ```
 
 # Creating or Editing a Map

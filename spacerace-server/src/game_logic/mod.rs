@@ -9,7 +9,7 @@ use crate::game_state::{GameState, GameStatus};
 use crate::{components, game_state};
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
-use rand::prelude::SliceRandom;
+use rand::prelude::{IndexedRandom, SliceRandom};
 use rand::Rng;
 pub use server_state::ServerState;
 use std::time::Duration;
