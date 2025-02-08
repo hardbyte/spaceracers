@@ -62,7 +62,7 @@ fn main() {
             }),
             ..default()
         }))
-        .add_plugins(GraphicsPlugin);
+        ;
     }
     #[cfg(not(feature = "ui"))]
     {
@@ -70,7 +70,9 @@ fn main() {
         app.add_plugins(StatesPlugin);
     }
 
-    app.add_plugins(game_logic::GameLogicPlugin).run();
+    app.add_plugins(game_logic::GameLogicPlugin)
+        .add_plugins(GraphicsPlugin)
+        .run();
 
     info!("Shutting down...");
 

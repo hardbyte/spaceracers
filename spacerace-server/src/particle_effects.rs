@@ -11,7 +11,7 @@ use crate::game_logic::ServerState;
 use bevy_rapier2d::pipeline::CollisionEvent;
 use std::time::Duration;
 use std::collections::HashMap;
-
+use bevy_rapier2d::na::{DimAdd, DimMul, DimSub};
 
 /// This plugin sets up both thruster and collision particle effects
 /// once the game goes into the Active state.
@@ -44,17 +44,11 @@ impl Plugin for ParticleEffectsPlugin {
             .init_resource::<CollisionEffectHandle>()
 
         // When the game starts (Active), load effect assets & attach thrusters
-        .add_systems(OnEnter(ServerState::Active), load_effect_assets)
+        .add_systems(OnEnter(ServerState::Active), load_effect_assets.before(attach_thruster_effects_to_ships))
 
-        // Also on enter, after ships have spawned, attach thrusters to them
-        // .after(your_ship_spawn_system) if you need guaranteed order
+        // Note this is added in game_logic after ships have spawned to attach thrusters
         .add_systems(OnEnter(ServerState::Active), attach_thruster_effects_to_ships)
 
-        // Every frame in Active:
-        // - update thruster effect intensity based on input
-        // - spawn collision sparks after collisions
-        //   (we run it after your existing handle_collision_events system
-        //    so we know which collisions actually happened)
         .add_systems(Update, update_thruster_effect_system.run_if(in_state(ServerState::Active)));
 
             //(
@@ -67,25 +61,41 @@ impl Plugin for ParticleEffectsPlugin {
 }
 
 
-fn load_effect_assets(
+pub(crate) fn load_effect_assets(
     mut commands: Commands,
     mut thruster_res: ResMut<ThrusterEffectHandles>,
     mut collision_res: ResMut<CollisionEffectHandle>,
     mut effects: ResMut<Assets<EffectAsset>>,
 ) {
     // ----- Thruster effect -----
-    // Spawner: 0 p/s initially, but we’ll dynamically set the actual rate
+    // Spawner: On/Off initially, but would be great to dynamically set the actual rate
     // based on how much thrust is applied (0 to e.g. 100).
-    let thruster_spawner = Spawner::rate(0.0.into());
+    let thruster_spawner = Spawner::rate(500.0.into());
 
     // Setup an expression to define the initial velocity, color, etc.
     let mut writer = ExprWriter::new();
 
-    // We'll place the effect behind the ship, so we can set a small initial velocity
-    // in the negative Y direction, for instance. But we can also apply offset/rotation in a parent transform.
+    // We'll place the effect behind the ship
+    let init_position = SetAttributeModifier::new(
+        Attribute::POSITION,
+        writer.lit(Vec3::new(0., -0.5, 0.)).expr(),
+    );
+
+    // Particle velocity
+    // We want the particles to exhaust the ship in the negative Y direction
+    // Base velocity pointing in the negative Y direction
+    let base_velocity = writer.lit(Vec3::new(0., -20., 0.));
+    // Generate a random float in [0,1) and shift it to [-0.5, 0.5)
+    let random_value = writer.rand(ScalarType::Float) - writer.lit(0.5);
+
+    // Multiply by a vector to scale the spread (here, ±2.0 on the X axis)
+    let random_offset = random_value * writer.lit(Vec3::new(4.0, 0.0, 0.0));
+
+    // Add the base velocity and random offset to get the final velocity
+    let final_velocity = base_velocity + random_offset;
     let init_velocity = SetAttributeModifier::new(
         Attribute::VELOCITY,
-        writer.lit(Vec3::new(0., -10., 0.)).expr(),
+        final_velocity.expr(),
     );
 
     // Give particles a lifetime of 0.7 sec
@@ -94,24 +104,28 @@ fn load_effect_assets(
     // Age starts at 0
     let init_age = SetAttributeModifier::new(Attribute::AGE, writer.lit(0.).expr());
 
-    // Color fade over time (optional). For simplicity, let's just set color at spawn.
-    let init_color = SetAttributeModifier::new(
-        Attribute::COLOR,
-        writer.lit(Vec4::new(1., 0.5, 0., 1.)).expr(), // orange color
-    );
+    let mut color_gradient1 = Gradient::new();
+    // Start bright white
+    color_gradient1.add_key(0.0, Vec4::new(1.0, 1.0, 1.0, 1.0));
+    // Transition to orange
+    color_gradient1.add_key(0.3, Vec4::new(1.0, 0.5, 0.05, 1.0));
+    // Then to red
+    color_gradient1.add_key(0.6, Vec4::new(1.0, 0.2, 0.0, 1.0));
+    // Fade away
+    color_gradient1.add_key(1.0, Vec4::new(1.0, 0.0, 0.0, 0.0));
 
-    // Basic effect with 8192 max particles, continuous spawner (0 p/s initially),
-    // and the modifiers from above
+
     let thruster_effect = effects.add(
         EffectAsset::new(8192, thruster_spawner, writer.finish())
             .with_name("ThrusterEffect")
+            .init(init_position)
             .init(init_velocity)
             .init(init_lifetime)
             .init(init_age)
-            .init(init_color)
-            // You can add a size or scale over lifetime if desired
+
+            .render(ColorOverLifetimeModifier {gradient: color_gradient1})
             .render(SetSizeModifier {
-                size: Vec3::splat(2.0).into(), // 2 px wide
+                size: Vec3::splat(3.0).into(), // px wide
             }),
     );
 
@@ -151,20 +165,21 @@ fn load_effect_assets(
 }
 
 
-fn attach_thruster_effects_to_ships(
+pub(crate) fn attach_thruster_effects_to_ships(
     mut commands: Commands,
     thruster_res: Res<ThrusterEffectHandles>,
     ship_query: Query<Entity, With<ControllableShip>>,
 ) {
     for ship_ent in &ship_query {
+        tracing::warn!("Attaching thruster effect to ship {:?}", ship_ent);
         // Attach a child for the thruster effect
         // We'll put the effect slightly behind the ship on the Y axis.
         commands.entity(ship_ent).with_children(|parent| {
             parent
                 .spawn(ParticleEffectBundle {
                     effect: ParticleEffect::new(thruster_res.effect.clone())
-                        .with_z_layer_2d(Some(1.0)), // optional, ensure it renders above/below
-                    transform: Transform::from_translation(Vec3::new(0.0, -12.0, 0.0)), // behind ship
+                        .with_z_layer_2d(Some(10.0)), // optional, ensure it renders above/below
+                    transform: Transform::from_translation(Vec3::new(0.0, -3.0, 0.0)), // behind ship
                     ..default()
                 })
                 .insert(ShipThrusterEffect); // a marker component so we can query them
@@ -174,7 +189,7 @@ fn attach_thruster_effects_to_ships(
 }
 
 fn update_thruster_effect_system(
-    mut effects_query: Query<(&Parent, &mut ParticleEffect), With<ShipThrusterEffect>>,
+    mut effects_query: Query<(&Parent, &mut EffectInitializers), With<ShipThrusterEffect>>,
     ships_query: Query<&ControllableShip>,
     app_state: Res<AppState>,
 ) {
@@ -194,8 +209,9 @@ fn update_thruster_effect_system(
         // maximum of 60 p/s
         let rate = if thrust_input > 0.0 { 60.0 } else { 0.0 };
 
-        // TODO AI use the rate
-        spawner.spawner.set_rate(rate.into());
+        // TODO modify the particle rate based on the thrust
+        spawner.set_active(rate > 0.0);
+
 
     }
 }

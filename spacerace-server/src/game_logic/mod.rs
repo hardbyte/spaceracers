@@ -25,7 +25,9 @@ impl Plugin for GameLogicPlugin {
             )
             .add_systems(
                 OnEnter(ServerState::Active),
-                (setup_scene, spawn_ships, start_game),
+                (setup_scene, spawn_ships, start_game).before(
+                    crate::particle_effects::attach_thruster_effects_to_ships
+                ),
             )
             .add_systems(OnExit(ServerState::Active), (unload_game_entities))
             .add_systems(OnEnter(ServerState::Inactive), (setup_game_scheduler))
@@ -85,8 +87,9 @@ pub fn spawn_ships(
         );
 
         for player in &active_game.players {
+            tracing::info!("Adding ship for player {:?}", player.id);
             // Generate a random hue for this player's ship
-            let hue = rng.gen_range(0.0..360.0);
+            let hue = rng.random_range(0.0..360.0);
             let color = Color::hsl(hue, 0.8, 0.5);
 
             // Pick a random position for the ship from the map's start zones
