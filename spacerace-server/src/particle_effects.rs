@@ -195,7 +195,7 @@ fn update_thruster_effect_system(
         let rate = if thrust_input > 0.0 { 60.0 } else { 0.0 };
 
         // TODO AI use the rate
-        spawner.spawner_mut().set_rate(rate.into());
+        spawner.spawner.set_rate(rate.into());
 
     }
 }
