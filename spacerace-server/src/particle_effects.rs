@@ -84,7 +84,7 @@ pub(crate) fn load_effect_assets(
     // ----- Thruster effect -----
     // Spawner: On/Off initially, but would be great to dynamically set the actual rate
     // based on how much thrust is applied (0 to e.g. 100).
-    let thruster_spawner = Spawner::rate(500.0.into());
+    let thruster_spawner = Spawner::rate(100.0.into());
 
     // an expression to define the initial velocity, color, etc.
     let mut writer = ExprWriter::new();
@@ -147,7 +147,7 @@ pub(crate) fn load_effect_assets(
     // SPARKS (wall collisions)
     // -------------------------
     // Spawn particles once (immediatly) on each collision
-    let spark_spawner = Spawner::once(50.0.into(), true);
+    let spark_spawner = Spawner::once(75.0.into(), true);
     let mut spark_writer = ExprWriter::new();
     let spark_init_vel = SetVelocityCircleModifier {
         center: spark_writer.lit(Vec3::ZERO).expr(),
@@ -166,7 +166,6 @@ pub(crate) fn load_effect_assets(
     let spark_init_position = SetAttributeModifier::new(
         Attribute::POSITION,
         spark_writer.lit(Vec3::ZERO).expr(),
-        //spark_writer.lit(Vec3::new(0., -0.5, 0.)).expr(),
     );
 
     //let spark_color = spark_writer.prop("color", "").expr();
@@ -190,21 +189,31 @@ pub(crate) fn load_effect_assets(
     // -------------------------
     let fireworks_spawner = Spawner::once(5000.0.into(), true);
     let mut fireworks_writer = ExprWriter::new();
-    let fwk_init_pos =
-        SetAttributeModifier::new(Attribute::POSITION, fireworks_writer.lit(Vec3::ZERO).expr());
-    let fwk_init_vel = SetVelocityCircleModifier {
+    let fwk_init_pos = SetAttributeModifier::new(
+        Attribute::POSITION,
+        fireworks_writer.lit(Vec3::ZERO).expr(),
+    );
+    let fwk_init_pos_modifier = SetPositionSphereModifier {
         center: fireworks_writer.lit(Vec3::ZERO).expr(),
-        axis: fireworks_writer.lit(Vec3::Z).expr(),
-        speed: fireworks_writer.lit(25.0).expr(), // big explosion
+        radius: fireworks_writer.lit(50.0).expr(),
+        dimension: ShapeDimension::Volume,
+    };
+    let fwk_init_vel = SetVelocitySphereModifier {
+        center: fireworks_writer.lit(Vec3::ZERO).expr(),
+        speed: fireworks_writer.lit(200.0).expr(), // big explosion
     };
     let fwk_init_lifetime =
-        SetAttributeModifier::new(Attribute::LIFETIME, fireworks_writer.lit(1.5).expr());
+        SetAttributeModifier::new(Attribute::LIFETIME, fireworks_writer.lit(15.).expr());
     let fwk_init_age = SetAttributeModifier::new(Attribute::AGE, fireworks_writer.lit(0.).expr());
+
+    // Every frame, add a gravity-like acceleration downward
+    let accel = fireworks_writer.lit(Vec3::new(0., -3., 0.)).expr();
+    let update_accel = AccelModifier::new(accel);
 
     // Firework color gradient
     let mut fwk_init_color = Gradient::new();
-    fwk_init_color.add_key(0.0, Vec4::new(1.0, 1.0, 1.0, 1.0)); // white
-    fwk_init_color.add_key(0.2, Vec4::new(1.0, 0.8, 0.0, 1.0)); // yellow
+    //fwk_init_color.add_key(0.0, Vec4::new(1.0, 1.0, 1.0, 1.0)); // white
+    fwk_init_color.add_key(0.0, Vec4::new(1.0, 0.8, 0.0, 1.0)); // yellow
     fwk_init_color.add_key(0.5, Vec4::new(1.0, 0.2, 0.0, 1.0)); // red
     fwk_init_color.add_key(0.8, Vec4::new(0.3, 0.0, 0.0, 1.0)); // dark red
     fwk_init_color.add_key(1.0, Vec4::splat(0.0)); // fade out
@@ -213,14 +222,16 @@ pub(crate) fn load_effect_assets(
         EffectAsset::new(8024, fireworks_spawner, fireworks_writer.finish())
             .with_name("FinishFireworksEffect")
             .init(fwk_init_pos)
+            .init(fwk_init_pos_modifier)
             .init(fwk_init_vel)
             .init(fwk_init_lifetime)
             .init(fwk_init_age)
+            .update(update_accel)
             .render(ColorOverLifetimeModifier {
                 gradient: fwk_init_color,
             })
             .render(SetSizeModifier {
-                size: Vec3::splat(2.0).into(),
+                size: Vec3::splat(5.0).into(),
             }),
     );
     fireworks_res.effect = fireworks_asset;
@@ -388,16 +399,16 @@ fn spawn_collision_effects_system(
                         commands.spawn((
                             ParticleEffectBundle {
                                 effect: ParticleEffect::new(fireworks_res.effect.clone())
-                                    .with_z_layer_2d(Some(10.0)),
+                                    .with_z_layer_2d(Some(100.0)),
                                 transform: Transform {
-                                    translation: ship_transform.translation,
-                                    rotation: ship_transform.rotation,
+                                    translation: Vec3::new(0., 0., 20.),
+                                    // translation: ship_transform.translation,
                                     ..Default::default()
                                 },
                                 ..Default::default()
                             },
                             ParticleEffectLifetime {
-                                timer: Timer::from_seconds(3.0, TimerMode::Once),
+                                timer: Timer::from_seconds(5.0, TimerMode::Once),
                             },
                         ));
                     } else {
