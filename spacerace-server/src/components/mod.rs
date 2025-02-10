@@ -6,11 +6,6 @@ pub mod ship;
 pub use player::{Player, PlayerRegistration};
 pub use ship::ControllableShip;
 
-#[derive(Component)]
-pub struct Position {
-    x: f32,
-    y: f32,
-}
 
 #[derive(Component)]
 pub struct Person;

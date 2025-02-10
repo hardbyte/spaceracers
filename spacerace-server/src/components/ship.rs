@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 #[derive(Component)]
 pub struct ControllableShip {
-    pub id: uuid::Uuid,
+    pub id: Uuid,
 
     pub impulse: f32,
     pub torque_impulse: f32,
