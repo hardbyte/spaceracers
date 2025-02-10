@@ -190,10 +190,8 @@ pub(crate) fn load_effect_assets(
     // -------------------------
     let fireworks_spawner = Spawner::once(5000.0.into(), true);
     let mut fireworks_writer = ExprWriter::new();
-    let fwk_init_pos = SetAttributeModifier::new(
-        Attribute::POSITION,
-        fireworks_writer.lit(Vec3::ZERO).expr(),
-    );
+    let fwk_init_pos =
+        SetAttributeModifier::new(Attribute::POSITION, fireworks_writer.lit(Vec3::ZERO).expr());
     let fwk_init_vel = SetVelocityCircleModifier {
         center: fireworks_writer.lit(Vec3::ZERO).expr(),
         axis: fireworks_writer.lit(Vec3::Z).expr(),
@@ -336,8 +334,6 @@ fn update_thruster_effect_system(
         }
 
         // Rotational Thrusters
-
-
     }
 }
 
@@ -422,9 +418,7 @@ fn spawn_collision_effects_system(
                             ParticleEffectLifetime {
                                 timer: Timer::from_seconds(3.0, TimerMode::Once),
                             },
-
                         ));
-
                     }
                 }
             }

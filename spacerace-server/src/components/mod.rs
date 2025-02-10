@@ -6,7 +6,6 @@ pub mod ship;
 pub use player::{Player, PlayerRegistration};
 pub use ship::ControllableShip;
 
-
 #[derive(Component)]
 pub struct Person;
 
