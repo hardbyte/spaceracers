@@ -7,7 +7,7 @@ use axum::extract::State;
 use axum::Json;
 use serde::{Deserialize, Serialize};
 
-use rand::prelude::SliceRandom;
+use rand::prelude::{IndexedRandom, SliceRandom};
 use std::time::Duration;
 use tracing::info;
 
@@ -57,7 +57,7 @@ pub async fn lobby_handler(
             "Starmap".to_string(),
             "Christchurch".to_string(),
         ];
-        let random_map_ref = maps.choose(&mut rand::thread_rng()).unwrap();
+        let random_map_ref = maps.choose(&mut rand::rng()).unwrap();
         let random_map = random_map_ref.clone();
         pending_games.push(PendingGame::new(random_map.to_string()));
 

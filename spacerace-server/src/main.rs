@@ -13,6 +13,7 @@ mod control;
 #[cfg(feature = "ui")]
 mod graphics_plugin;
 mod lobby_graphics_plugin;
+mod particle_effects;
 
 use app_state::AppState;
 
@@ -56,12 +57,11 @@ fn main() {
         app.add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 //resolution: bevy::window::WindowResolution::new(1000., 1000.),
-                title: "SpaceRaceRS Graphics Rendering Plugin".to_string(),
+                title: "SpaceRacers".to_string(),
                 ..default()
             }),
             ..default()
-        }))
-        .add_plugins(GraphicsPlugin);
+        }));
     }
     #[cfg(not(feature = "ui"))]
     {
@@ -69,7 +69,9 @@ fn main() {
         app.add_plugins(StatesPlugin);
     }
 
-    app.add_plugins(game_logic::GameLogicPlugin).run();
+    app.add_plugins(game_logic::GameLogicPlugin)
+        .add_plugins(GraphicsPlugin)
+        .run();
 
     info!("Shutting down...");
 
