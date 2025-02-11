@@ -163,10 +163,8 @@ pub(crate) fn load_effect_assets(
     gradient.add_key(0.8, Vec4::new(1.0, 0.2, 0.0, 1.0)); // red
     gradient.add_key(1.0, Vec4::splat(0.));
 
-    let spark_init_position = SetAttributeModifier::new(
-        Attribute::POSITION,
-        spark_writer.lit(Vec3::ZERO).expr(),
-    );
+    let spark_init_position =
+        SetAttributeModifier::new(Attribute::POSITION, spark_writer.lit(Vec3::ZERO).expr());
 
     //let spark_color = spark_writer.prop("color", "").expr();
 
@@ -189,10 +187,8 @@ pub(crate) fn load_effect_assets(
     // -------------------------
     let fireworks_spawner = Spawner::once(5000.0.into(), true);
     let mut fireworks_writer = ExprWriter::new();
-    let fwk_init_pos = SetAttributeModifier::new(
-        Attribute::POSITION,
-        fireworks_writer.lit(Vec3::ZERO).expr(),
-    );
+    let fwk_init_pos =
+        SetAttributeModifier::new(Attribute::POSITION, fireworks_writer.lit(Vec3::ZERO).expr());
     let fwk_init_pos_modifier = SetPositionSphereModifier {
         center: fireworks_writer.lit(Vec3::ZERO).expr(),
         radius: fireworks_writer.lit(50.0).expr(),
