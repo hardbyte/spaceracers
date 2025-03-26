@@ -10,7 +10,7 @@ mod telemetry;
 mod tests;
 
 mod control;
-#[cfg(feature = "ui")]
+
 mod graphics_plugin;
 mod lobby_graphics_plugin;
 mod particle_effects;
@@ -24,7 +24,6 @@ use bevy_tokio_tasks::TokioTasksPlugin;
 use opentelemetry::global;
 use serde::{Deserialize, Serialize};
 
-#[cfg(feature = "ui")]
 use graphics_plugin::GraphicsPlugin;
 
 use game_logic::ServerState;
@@ -56,10 +55,11 @@ fn main() {
             ..default()
         }));
     }
+
     #[cfg(not(feature = "ui"))]
     {
         app.add_plugins(MinimalPlugins);
-        app.add_plugins(StatesPlugin);
+        app.add_plugins(bevy::state::app::StatesPlugin);
     }
 
     app.add_plugins(game_logic::GameLogicPlugin)
