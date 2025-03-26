@@ -1,14 +1,13 @@
 use crossterm::event::{self, Event, KeyCode};
-use crossterm::{cursor, execute, queue, terminal};
+use crossterm::{cursor, execute, terminal};
 use rand::distributions::DistString;
-use rand::Rng;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::io::{stdout, Write};
 use std::time::Duration;
 use tokio::time::sleep;
-use tracing::{debug, error, info};
+use tracing::{debug, info};
 use tracing_subscriber;
 
 /// Fallback to localhost

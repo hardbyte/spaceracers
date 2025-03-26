@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::app_state::AppState;
+    use crate::map::{Map, NamedMapId};
     use crate::network::api::root_handler;
     use crate::network::lobby_route::{lobby_handler, LobbyResponse};
 
@@ -10,6 +11,7 @@ mod tests {
         body::Body,
         http::{Request, StatusCode},
     };
+    use bevy::asset::AssetId;
     use http_body_util::BodyExt;
     use tower::ServiceExt;
     use uuid::Uuid;
@@ -32,6 +34,8 @@ mod tests {
     #[tokio::test]
     async fn test_lobby_handler() {
         let app_state = AppState::new();
+        app_state.add_map(NamedMapId("some_map".to_string(), Default::default()));
+
         let app = axum::Router::new()
             .route("/lobby", post(lobby_handler))
             .with_state(app_state.clone());
@@ -60,7 +64,7 @@ mod tests {
         let lobby_response: LobbyResponse = serde_json::from_slice(&body_bytes).unwrap();
 
         assert_eq!(lobby_response.player_id, "TestPlayer");
-        assert_eq!(lobby_response.map, "tiled");
+        assert_eq!(lobby_response.map, "some_map");
         // assert that the response game ID is a valid UUID
         assert!(Uuid::parse_str(&lobby_response.game_id).is_ok());
     }
@@ -68,6 +72,8 @@ mod tests {
     #[tokio::test]
     async fn test_lobby_with_multiple_players() {
         let app_state = AppState::new();
+        app_state.add_map(NamedMapId("some_map".to_string(), Default::default()));
+
         let app = axum::Router::new()
             .route("/lobby", post(lobby_handler))
             .with_state(app_state.clone());

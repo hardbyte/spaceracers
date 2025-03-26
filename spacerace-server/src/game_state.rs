@@ -1,7 +1,8 @@
 use crate::components::ship::Ship;
 use crate::components::Player;
-use crate::map::{load_map, Map};
+use crate::map::{Map, NamedMapId};
 
+use bevy::asset::AssetId;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use uuid::Uuid;
@@ -24,15 +25,15 @@ pub struct GameState {
     pub state: GameStatus,
 }
 
-impl TryFrom<PendingGame> for GameState {
-    type Error = ();
-
-    fn try_from(pending_game: PendingGame) -> Result<Self, Self::Error> {
-        let map = load_map(pending_game.map_name.as_str()).ok_or(())?;
-
+impl GameState {
+    pub(crate) fn new(
+        game_id: Uuid,
+        players: Vec<Player>,
+        map: Map,
+    ) -> Result<Self, anyhow::Error> {
         Ok(GameState {
-            game_id: pending_game.game_id,
-            players: pending_game.players,
+            game_id: game_id,
+            players: players.clone(),
             ships: vec![],
             map,
             state: GameStatus::Queued,
@@ -41,19 +42,19 @@ impl TryFrom<PendingGame> for GameState {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Clone)]
 pub struct PendingGame {
     pub game_id: Uuid,
     pub players: Vec<Player>,
-    pub map_name: String,
+    pub map_id: NamedMapId,
 }
 
 impl PendingGame {
-    pub(crate) fn new(map_name: String) -> PendingGame {
+    pub(crate) fn new(map_id: NamedMapId) -> PendingGame {
         PendingGame {
             game_id: Uuid::new_v4(),
             players: vec![],
-            map_name,
+            map_id,
         }
     }
 }

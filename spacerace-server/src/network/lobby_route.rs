@@ -51,15 +51,10 @@ pub async fn lobby_handler(
 
     // If no pending game exists or if they are all full, create a new one
     if pending_games.len() == 0 || pending_games.iter().all(|g| g.players.len() >= MAX_PLAYERS) {
-        // TODO load these from the maps directory
-        let maps = vec![
-            "Aga".to_string(),
-            "Starmap".to_string(),
-            "Christchurch".to_string(),
-        ];
-        let random_map_ref = maps.choose(&mut rand::rng()).unwrap();
+        let map_ids = state.map_ids.lock().unwrap();
+        let random_map_ref = map_ids.choose(&mut rand::rng()).unwrap();
         let random_map = random_map_ref.clone();
-        pending_games.push(PendingGame::new(random_map.to_string()));
+        pending_games.push(PendingGame::new(random_map));
 
         info!("Creating a new pending game");
     }
@@ -101,6 +96,6 @@ pub async fn lobby_handler(
     Json(LobbyResponse {
         player_id: payload.name,
         game_id: pending_game.game_id.to_string(),
-        map: pending_game.map_name.clone(),
+        map: pending_game.map_id.0.clone(),
     })
 }

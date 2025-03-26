@@ -6,6 +6,7 @@ use crate::components::ship::ControllableShip;
 use crate::components::ship::Ship;
 use crate::game_logic::leaderboard::LeaderBoardPlugin;
 use crate::game_state::{GameState, GameStatus};
+use crate::map::Map;
 use crate::{components, game_state};
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
@@ -217,7 +218,7 @@ pub struct GameSchedulerConfig {
 }
 
 pub fn setup_game_scheduler(mut commands: Commands) {
-    tracing::info!("Setting up game scheduler");
+    tracing::warn!("Setting up game scheduler");
     commands.insert_resource(GameSchedulerConfig {
         timer: Timer::from_seconds(10.0, TimerMode::Repeating),
     });
@@ -226,6 +227,7 @@ pub fn setup_game_scheduler(mut commands: Commands) {
 #[tracing::instrument(skip_all)]
 pub fn game_scheduler_system(
     app_state: Res<AppState>,
+    maps: Res<Assets<Map>>,
     time: Res<Time>,
     mut next_server_state: ResMut<NextState<ServerState>>,
     mut config: ResMut<GameSchedulerConfig>,
@@ -247,9 +249,15 @@ pub fn game_scheduler_system(
                 // Remove the pending game from the lobby
                 let pending_game = lobby.remove(index);
 
+                let map = maps.get(pending_game.map_id.1).unwrap();
+
                 // Create a new GameState from the pending game
-                let game_state = GameState::try_from(pending_game.clone())
-                    .expect("Failed to create GameState from PendingGame");
+                let game_state = GameState::new(
+                    pending_game.game_id,
+                    pending_game.players.clone(),
+                    map.clone(),
+                )
+                .expect("Failed to create GameState from PendingGame");
 
                 tracing::info!(game.id=?game_state.game_id, state=?game_state, "Starting game");
 

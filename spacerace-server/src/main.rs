@@ -10,28 +10,20 @@ mod telemetry;
 mod tests;
 
 mod control;
-#[cfg(feature = "ui")]
+
 mod graphics_plugin;
 mod lobby_graphics_plugin;
 mod particle_effects;
 
 use app_state::AppState;
+use map::{check_maps_loaded, load_maps, Map, MapAssetLoader};
 
 use bevy::prelude::*;
 
-use bevy_rapier2d::prelude::*;
-use bevy_rapier2d::rapier::prelude::CollisionEventFlags;
-use bevy_tokio_tasks::{TokioTasksPlugin, TokioTasksRuntime};
+use bevy_tokio_tasks::TokioTasksPlugin;
 use opentelemetry::global;
-use rand::prelude::SliceRandom;
-use rand::Rng;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::net::SocketAddr;
-use tracing::info;
-use uuid::Uuid;
 
-#[cfg(feature = "ui")]
 use graphics_plugin::GraphicsPlugin;
 
 use game_logic::ServerState;
@@ -63,14 +55,22 @@ fn main() {
             ..default()
         }));
     }
+
     #[cfg(not(feature = "ui"))]
     {
         app.add_plugins(MinimalPlugins);
-        app.add_plugins(StatesPlugin);
+        app.add_plugins(bevy::state::app::StatesPlugin);
     }
 
     app.add_plugins(game_logic::GameLogicPlugin)
         .add_plugins(GraphicsPlugin)
+        .init_asset::<Map>()
+        .init_asset_loader::<MapAssetLoader>()
+        .add_systems(Startup, load_maps)
+        .add_systems(
+            Update,
+            check_maps_loaded.run_if(in_state(ServerState::Loading)),
+        )
         .run();
 
     info!("Shutting down...");
